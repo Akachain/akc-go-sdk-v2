@@ -1,15 +1,33 @@
-package util
+// Copyright (c) 2021 akachain
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy of
+// this software and associated documentation files (the "Software"), to deal in
+// the Software without restriction, including without limitation the rights to
+// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+// the Software, and to permit persons to whom the Software is furnished to do so,
+// subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+// FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+// COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+// IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+package mock
 
 import (
 	"errors"
 	"fmt"
+	"github.com/hyperledger/fabric-chaincode-go/shim"
+	"github.com/hyperledger/fabric-chaincode-go/shimtest"
+	pb "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb"
 	"strings"
 	"unicode/utf8"
-
-	. "github.com/hyperledger/fabric-chaincode-go/shim"
-	"github.com/hyperledger/fabric-chaincode-go/shimtest"
-	pb "github.com/hyperledger/fabric-protos-go/peer"
 
 	logging "github.com/op/go-logging"
 	viper "github.com/spf13/viper"
@@ -25,7 +43,7 @@ var mockLogger = logging.MustGetLogger("mockStubExtend")
 // MockStubExtend provides composition class for MockStub as some of the mockstub methods are not implemented
 type MockStubExtend struct {
 	args      [][]byte        // this is private in MockStub
-	cc        Chaincode       // this is private in MockStub
+	cc        shim.Chaincode     // this is private in MockStub
 	CouchDB   bool            // if we use couchDB
 	DbHandler *CouchDBHandler // if we use couchDB
 	*shimtest.MockStub
@@ -33,7 +51,7 @@ type MockStubExtend struct {
 
 // GetQueryResult overrides the same function in MockStub
 // that did not implement anything.
-func (stub *MockStubExtend) GetQueryResult(query string) (StateQueryIteratorInterface, error) {
+func (stub *MockStubExtend) GetQueryResult(query string) (shim.StateQueryIteratorInterface, error) {
 	// Query data from couchDB
 	raw, error := stub.DbHandler.QueryDocument(query)
 	if error != nil {
@@ -45,7 +63,7 @@ func (stub *MockStubExtend) GetQueryResult(query string) (StateQueryIteratorInte
 // GetQueryResultWithPagination overrides the same function in MockStub
 // that did not implement anything.
 func (stub *MockStubExtend) GetQueryResultWithPagination(query string, pageSize int32,
-	bookmark string) (StateQueryIteratorInterface, *pb.QueryResponseMetadata, error) {
+	bookmark string) (shim.StateQueryIteratorInterface, *pb.QueryResponseMetadata, error) {
 
 	raw, er := stub.DbHandler.QueryDocumentWithPagination(query, pageSize, bookmark)
 	if er != nil {
@@ -63,14 +81,15 @@ func (stub *MockStubExtend) GetQueryResultWithPagination(query string, pageSize 
 	return iterator, queryResponse, nil
 }
 
-// NewMockStubExtend constructor
-func NewMockStubExtend(stub *shimtest.MockStub, c Chaincode) *MockStubExtend {
+// NewMockStubExtend creates a new MockStubExtend object.
+// You must set config path to the directory contains core.yaml file.
+func NewMockStubExtend(stub *shimtest.MockStub, cc shim.Chaincode, configPath string) *MockStubExtend {
 	s := new(MockStubExtend)
 	s.MockStub = stub
-	s.cc = c
+	s.cc = cc
 	s.CouchDB = false
 	viper.SetConfigName("core")
-	viper.AddConfigPath(".")
+	viper.AddConfigPath(configPath)
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %s", err))
@@ -201,7 +220,7 @@ func (stub *MockStubExtend) putStateOriginal(key string, value []byte) error {
 }
 
 // GetStateByPartialCompositeKey queries couchdb by range
-func (stub *MockStubExtend) GetStateByPartialCompositeKey(objectType string, attributes []string) (StateQueryIteratorInterface, error) {
+func (stub *MockStubExtend) GetStateByPartialCompositeKey(objectType string, attributes []string) (shim.StateQueryIteratorInterface, error) {
 	startKey, _ := stub.CreateCompositeKey(objectType, attributes)
 	endKey := startKey + string(maxUnicodeRuneValue)
 
