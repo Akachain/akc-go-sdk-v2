@@ -34,7 +34,7 @@ import (
 
 const (
 	// The couchDB test will have this name: DefaultChannelName_chaincodeName
-	DefaultChannelName   = "testchannel"   // Fabric channel
+	DefaultChannelName = "testchannel" // Fabric channel
 )
 
 // CouchDBHandler holds 1 parameter:
@@ -42,7 +42,7 @@ const (
 // This is to guarantee that the test uses the same logic in interaction with stateDB as the chaincode.
 // This also includes how chaincode builds its query to interact with the stateDB.
 type CouchDBHandler struct {
-	dbEngine *statecouchdb.VersionedDB
+	dbEngine      *statecouchdb.VersionedDB
 	chaincodeName string
 }
 

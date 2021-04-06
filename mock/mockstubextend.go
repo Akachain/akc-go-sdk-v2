@@ -43,7 +43,7 @@ var mockLogger = logging.MustGetLogger("mockStubExtend")
 // MockStubExtend provides composition class for MockStub as some of the mockstub methods are not implemented
 type MockStubExtend struct {
 	args      [][]byte        // this is private in MockStub
-	cc        shim.Chaincode     // this is private in MockStub
+	cc        shim.Chaincode  // this is private in MockStub
 	CouchDB   bool            // if we use couchDB
 	DbHandler *CouchDBHandler // if we use couchDB
 	*shimtest.MockStub
