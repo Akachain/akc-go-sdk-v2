@@ -17,6 +17,21 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+// Package mock provides mock methods to simulate how a peer node interact with CouchDB
+// and simulate a transaction proposal. This does not requires a working Fabric Peer like
+// FabricSDK but require connection to a remote CouchDB instance.
+//
+// The workflow is as follow
+//
+// 1) Create a core.yaml follow similar template in test/contract/core.yaml, remember to change the configuration of the couchDB as you need
+//
+// 2) Create a NewMockStubExtend object that point to the core.yaml and the smart contract object
+//
+// 3) Process Indexes (if need)
+//
+// 4) Perform MockInvokeTransaction
+//
+// For more details, please find test example in the README file
 package mock
 
 import (

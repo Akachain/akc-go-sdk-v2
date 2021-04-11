@@ -17,6 +17,10 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+// Package contract provides a sample smart contract.
+// it uses util package to interact with the state database
+// it also uses mock package to quickly test the solution
+// by connecting to a remote couchDB instance.
 package contract
 
 import (
@@ -39,5 +43,5 @@ type SampleData struct {
 
 // Create something
 func (s *SampleContract) CreateSampleObject(ctx contractapi.TransactionContextInterface, key string, val string) error {
-	return util.Createdata(ctx.GetStub(), DocPrefix, []string{key}, &SampleData{Key1: key, Attribute1: val})
+	return util.CreateData(ctx.GetStub(), DocPrefix, []string{key}, &SampleData{Key1: key, Attribute1: val})
 }
