@@ -21,7 +21,9 @@ package mock
 
 import (
 	"encoding/json"
+	"github.com/hyperledger/fabric/common/ledger/testutil"
 	"github.com/hyperledger/fabric/common/metrics/disabled"
+	"github.com/hyperledger/fabric/core/common/ccprovider"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb/statecouchdb"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/version"
@@ -71,7 +73,10 @@ func NewCouchDBHandler(isDrop bool, ccName string) (*CouchDBHandler, error) {
 
 	// Sometimes we'll have to drop the database to clean all previous test
 	if isDrop == true {
-		cleanUp(ccName)
+		er := cleanUp(ccName)
+		if er != nil {
+			return nil, er
+		}
 	}
 
 	// Create a new dbEngine for the channel
@@ -102,6 +107,30 @@ func cleanUp(ccName string) error {
 	db := couchdb.CouchDatabase{CouchInstance: ins, DBName: dbName}
 	_, er = db.DropDatabase()
 	return er
+}
+
+// ProcessIndexesForChaincodeDeploy creates indexes for a database.
+// We will need the name of the json index fil and the relative path to this file
+func (handler *CouchDBHandler) ProcessIndexesForChaincodeDeploy(indexFileName string, path string) error {
+
+	indexContent, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	// Process index
+	dbArtifactsTarBytes := testutil.CreateTarBytesForTest(
+		[]*testutil.TarFileEntry{
+			{Name: "META-INF/statedb/couchdb/indexes/" + indexFileName, Body: string(indexContent)},
+		},
+	)
+
+	fileEntries, errExtract := ccprovider.ExtractFileEntries(dbArtifactsTarBytes, "couchdb")
+	if errExtract != nil {
+		return errExtract
+	}
+
+	return handler.dbEngine.ProcessIndexesForChaincodeDeploy(handler.chaincodeName, fileEntries["META-INF\\statedb\\couchdb\\indexes"])
 }
 
 // SaveDocument stores a value in couchDB

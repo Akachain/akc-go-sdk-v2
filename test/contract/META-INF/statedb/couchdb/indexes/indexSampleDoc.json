@@ -1,0 +1,17 @@
+{
+    "index": {
+        "partial_filter_selector": {
+            "Status": "Pending",
+            "_id": {
+                "$gt": "\u0000Transactions",
+                "$lt": "\u0000Transactions\uFFFF"
+            }
+        },
+        "fields": [
+            {"CreatedAt":"asc"}
+        ]
+      },
+    "ddoc": "indexSampleDoc",
+    "name": "indexSample",
+    "type" : "json"
+}

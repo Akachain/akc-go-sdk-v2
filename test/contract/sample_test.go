@@ -38,6 +38,12 @@ func setupMock() *mock.MockStubExtend {
 	// Create a new database, Drop old database
 	db, _ := mock.NewCouchDBHandler(true, chaincodeName)
 	stub.SetCouchDBConfiguration(db)
+
+	// Process indexes
+	err := db.ProcessIndexesForChaincodeDeploy("indexSampleDoc.json", "./META-INF/statedb/couchdb/indexes/indexSampleDoc.json")
+	if err != nil {
+		return nil
+	}
 	return stub
 }
 
@@ -53,7 +59,10 @@ func TestSimpleData(t *testing.T) {
 	state, _ := stub.GetState(compositeKey)
 	var ad [10]SampleData
 
-	json.Unmarshal([]byte(state), &ad[0])
+	err := json.Unmarshal([]byte(state), &ad[0])
+	if err != nil {
+		t.Fail()
+	}
 
 	// Check if the created data information is correct
 	assert.Equal(t, key1, ad[0].Key1)
