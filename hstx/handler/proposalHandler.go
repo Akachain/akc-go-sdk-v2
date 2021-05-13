@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strings"
+	"time"
 
 	"github.com/Akachain/akc-go-sdk-v2/common"
 	"github.com/Akachain/akc-go-sdk-v2/hstx/model"
@@ -65,12 +67,77 @@ func (sah *ProposalHanler) CreateProposal(stub shim.ChaincodeStubInterface, args
 }
 
 // GetProposalByID ...
-func (sah *ProposalHanler) GetProposalByID(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	util.CheckChaincodeFunctionCallWellFormedness(args, 1)
+func (sah *ProposalHanler) GetProposalByID(stub shim.ChaincodeStubInterface, proposalID string) (result *string, err error) {
+	//common.Logger.Debugf("Input-data sent to GetProposalByID func: %+v\n", proposalID)
+	log.Printf("Input-data sent to GetProposalByID func: %+v\n", proposalID)
 
-	proposalID := args[0]
-	res := util.GetDataByIdWithResponse(stub, proposalID, new(model.Proposal), model.ProposalTable)
-	return res
+	rawProposal, err := util.GetDataById(stub, proposalID, model.ProposalTable)
+	if err != nil {
+		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine())
+	}
+
+	proposal := new(model.Proposal)
+	mapstructure.Decode(rawProposal, proposal)
+
+	bytes, err := json.Marshal(proposal)
+	if err != nil { // Return error: Can't marshal json
+		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())
+	}
+	temp := ""
+	result = &temp
+	*result = string(bytes)
+
+	return result, nil
+}
+
+// GetPendingProposalBySuperAdminID ...
+func (sah *ProposalHanler) GetPendingProposalBySuperAdminID(stub shim.ChaincodeStubInterface, superAdminID string) (result *string, err error) {
+	//common.Logger.Debugf("Input-data sent to GetPendingProposalBySuperAdminID func: %+v\n", superAdminID)
+	log.Printf("Input-data sent to GetPendingProposalBySuperAdminID func: %+v\n", superAdminID)
+
+	var proposalList []model.Proposal
+
+	queryStr := fmt.Sprintf("{\"selector\": {\"_id\": {\"$regex\": \"%s\"},\"$or\": [{\"Status\": \"Pending\"},{\"Status\": \"Approved\"}]}}", model.ProposalTable)
+	resultsIterator, err := stub.GetQueryResult(queryStr)
+	if err != nil {
+		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine())
+	}
+	defer resultsIterator.Close()
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine())
+		}
+
+		proposal := new(model.Proposal)
+		err = json.Unmarshal(queryResponse.Value, proposal)
+		if err != nil { // Convert JSON error
+			return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())
+		}
+		proposalList = append(proposalList, *proposal)
+	}
+
+	for i := len(proposalList) - 1; i >= 0; i-- {
+		proposal := proposalList[i]
+		rs, err := util.GetByTwoColumns(stub, model.ApprovalTable, "ProposalID", fmt.Sprintf("\"%s\"", proposal.ProposalID), "ApproverID", fmt.Sprintf("\"%s\"", superAdminID))
+		if err != nil {
+			return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine())
+		}
+		if rs.HasNext() {
+			proposalList[i] = proposalList[len(proposalList)-1]
+			proposalList = proposalList[:len(proposalList)-1]
+		}
+	}
+
+	bytes, err := json.Marshal(proposalList)
+	if err != nil { // Return error: Can't marshal json
+		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())
+	}
+	temp := ""
+	result = &temp
+	*result = string(bytes)
+
+	return result, nil
 }
 
 //UpdateProposal ...
@@ -144,4 +211,52 @@ func (sah *ProposalHanler) UpdateProposal(stub shim.ChaincodeStubInterface, args
 		Msg:     common.ResCodeDict[common.SUCCESS],
 		Payload: string(bytes)}
 	return common.RespondSuccess(resSuc)
+}
+
+//CommitProposal ...
+func (sah *ProposalHanler) CommitProposal(stub shim.ChaincodeStubInterface, proposalID string) (result *string, err error) {
+	//common.Logger.Debugf("Input-data sent to CommitProposal func: %+v\n", proposalID)
+	log.Printf("Input-data sent to CommitProposal func: %+v\n", proposalID)
+
+	proposalStr, err := sah.GetProposalByID(stub, proposalID)
+	if err != nil {
+		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine())
+	}
+
+	var proposal model.Proposal
+	err = json.Unmarshal([]byte(*proposalStr), &proposal)
+	if err != nil {
+		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())
+	}
+
+	if strings.Compare("Pending", proposal.Status) == 0 {
+		return nil, fmt.Errorf("%s %s", "Not enough approval", common.GetLine())
+	}
+
+	if strings.Compare("Rejected", proposal.Status) == 0 {
+		return nil, fmt.Errorf("%s %s", "The proposal was rejected", common.GetLine())
+	}
+
+	proposal.Status = "Committed"
+	timestamp, err := stub.GetTxTimestamp()
+	if err != nil {
+		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine())
+	}
+	updatedTime := time.Unix(timestamp.Seconds, 0)
+	proposal.UpdatedAt = updatedTime.String()
+
+	err = util.ChangeInfo(stub, model.ProposalTable, []string{proposal.ProposalID}, proposal)
+	if err != nil { // Return error: Fail to Update data
+		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR5], err.Error(), common.GetLine())
+	}
+
+	bytes, err := json.Marshal(proposal)
+	if err != nil { // Return error: Can't marshal json
+		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())
+	}
+	temp := ""
+	result = &temp
+	*result = string(bytes)
+
+	return result, nil
 }
