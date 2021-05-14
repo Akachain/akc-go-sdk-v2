@@ -75,7 +75,8 @@ func (sah *ProposalHanler) GetAllProposal(stub shim.ChaincodeStubInterface, args
 	//	return common.RespondError(resErr)
 	//}
 
-	res, err := util.QueryAllDataWithPagination(stub, model.ProposalTable, new(model.Proposal), 5)
+	//res, err := util.QueryAllDataWithPagination(stub, model.ProposalTable, new(model.Proposal), 5)
+	res, err := getProposalData(stub, 5)
 	if err != nil {
 		resErr := common.ResponseError{common.ERR3, fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())}
 		return common.RespondError(resErr)
@@ -277,4 +278,49 @@ func (sah *ProposalHanler) CommitProposal(stub shim.ChaincodeStubInterface, prop
 	*result = string(bytes)
 
 	return result, nil
+}
+
+func getProposalData(stub shim.ChaincodeStubInterface, pagesize int32) ([]model.Proposal, error) {
+	//defer lib.TimeTrack(time.Now(), "getTxUsedData", loggerAccountBatch)
+	var txUsedResult = new(model.Proposal)
+	var txUsedList = []model.Proposal{}
+
+	var queryString = `
+		{ "selector": 
+			{
+				"_id": 
+					{"$gt": "\u0000Proposal",
+					"$lt": "\u0000Proposal\uFFFF"}			
+			},
+			"use_index":["indexProposalDoc","indexProposal"]
+		}`
+
+	common.Logger.Debugf("Get Query String %s", queryString)
+	resultsIterator, _, err := stub.GetQueryResultWithPagination(queryString, pagesize, "")
+	common.Logger.Debug("Finish Get query")
+
+	if err != nil {
+		return nil, err
+	}
+	defer resultsIterator.Close()
+
+	// Check data respose after query in database
+	if !resultsIterator.HasNext() {
+		// Return with txUsedList empty
+		return txUsedList, nil
+		// return nil, errors.New(lib.ResCodeDict[lib.ERR3])
+	}
+
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(queryResponse.Value, txUsedResult)
+		if err != nil {
+			continue
+		}
+		txUsedList = append(txUsedList, *txUsedResult)
+	}
+	return txUsedList, nil
 }
