@@ -61,17 +61,17 @@ func (sah *AdminHanler) CreateAdmin(stub shim.ChaincodeStubInterface, args []str
 
 //GetAllAdmin ...
 func (sah *AdminHanler) GetAllAdmin(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	var pagesize int32
-	errMarshal := json.Unmarshal([]byte(args[0]), &pagesize)
-	if errMarshal != nil {
-		// Return error: can't unmashal json
-		resErr := common.ResponseError{
-			ResCode: common.ERR4,
-			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], errMarshal.Error(), common.GetLine())}
-		return common.RespondError(resErr)
-	}
+	//var pagesize int32
+	//errMarshal := json.Unmarshal([]byte(args[0]), &pagesize)
+	//if errMarshal != nil {
+	//	// Return error: can't unmashal json
+	//	resErr := common.ResponseError{
+	//		ResCode: common.ERR4,
+	//		Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], errMarshal.Error(), common.GetLine())}
+	//	return common.RespondError(resErr)
+	//}
 
-	res, err := util.QueryAllDataWithPagination(stub, model.AdminTable, new(model.Admin), pagesize)
+	res, err := util.QueryAllDataWithPagination(stub, model.AdminTable, new(model.Admin), 5)
 	if err != nil {
 		resErr := common.ResponseError{common.ERR3, fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())}
 		return common.RespondError(resErr)
