@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"reflect"
 
 	"github.com/Akachain/akc-go-sdk-v2/common"
@@ -34,8 +33,7 @@ func (sah *AdminHanler) CreateAdmin(stub shim.ChaincodeStubInterface, args []str
 	admin.AdminID = stub.GetTxID()
 	admin.Status = "Active"
 
-	//common.Logger.Infof("Create Admin: %+v\n", admin)
-	log.Printf("Create Admin: %+v\n", admin)
+	common.Logger.Infof("Create Admin: %+v\n", admin)
 	err = util.CreateData(stub, model.AdminTable, []string{admin.AdminID}, &admin)
 	if err != nil {
 		resErr := common.ResponseError{
@@ -58,6 +56,36 @@ func (sah *AdminHanler) CreateAdmin(stub shim.ChaincodeStubInterface, args []str
 		ResCode: common.SUCCESS,
 		Msg:     common.ResCodeDict[common.SUCCESS],
 		Payload: string(bytes)}
+	return common.RespondSuccess(resSuc)
+}
+
+//GetAllAdminWithPagination ...
+func (sah *ProposalHanler) GetAllAdminWithPagination(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	var pagesize int32
+	errMarshal := json.Unmarshal([]byte(args[0]), &pagesize)
+	if errMarshal != nil {
+		// Return error: can't unmashal json
+		resErr := common.ResponseError{
+			ResCode: common.ERR4,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], errMarshal.Error(), common.GetLine())}
+		return common.RespondError(resErr)
+	}
+
+	res, err := util.QueryAllDataWithPagination(stub, model.AdminTable, new(model.Admin), pagesize)
+	if err != nil {
+		resErr := common.ResponseError{common.ERR3, fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())}
+		return common.RespondError(resErr)
+	}
+
+	fmt.Printf("Datalist: %v\n", res)
+	dataJson, err2 := json.Marshal(res)
+	if err2 != nil {
+		//convert JSON eror
+		resErr := common.ResponseError{common.ERR6, common.ResCodeDict[common.ERR6]}
+		return common.RespondError(resErr)
+	}
+	fmt.Printf("Response: %s\n", string(dataJson))
+	resSuc := common.ResponseSuccess{common.SUCCESS, common.ResCodeDict[common.SUCCESS], string(dataJson)}
 	return common.RespondSuccess(resSuc)
 }
 

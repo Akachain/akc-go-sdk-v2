@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"github.com/Akachain/akc-go-sdk-v2/common"
 	"reflect"
 	"strings"
 
@@ -25,8 +25,7 @@ func (s *Chaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 // Invoke method is called as a result of an application request to run the chain code
 // The calling application program has also specified the particular smart contract function to be called, with arguments
 func (s *Chaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
-	//common.Logger.Info("########### Hstx Invoke ###########")
-	log.Printf("########### Hstx Invoke ###########")
+	common.Logger.Info("########### Hstx Invoke ###########")
 
 	handler.InitHandler()
 
@@ -53,8 +52,7 @@ func (s *Chaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 // Query callback representing the query of a chaincode
 func (s *Chaincode) Query(stub shim.ChaincodeStubInterface) pb.Response {
-	//common.Logger.Info("########### Hstx Query ###########")
-	log.Printf("########### Hstx Query ###########")
+	common.Logger.Info("########### Hstx Query ###########")
 
 	// Retrieve the requested Smart Contract function and arguments
 	function, args := stub.GetFunctionAndParameters()

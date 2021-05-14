@@ -3,8 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"log"
-
 	"reflect"
 
 	"github.com/Akachain/akc-go-sdk-v2/common"
@@ -34,8 +32,7 @@ func (sah *SuperAdminHanler) CreateSuperAdmin(stub shim.ChaincodeStubInterface, 
 
 	superAdmin.Status = "Active"
 
-	//common.Logger.Infof("Create SuperAdmin: %+v\n", superAdmin)
-	log.Printf("Create SuperAdmin: %+v\n", superAdmin)
+	common.Logger.Infof("Create SuperAdmin: %+v\n", superAdmin)
 	err = util.CreateData(stub, model.SuperAdminTable, []string{superAdmin.SuperAdminID}, &superAdmin)
 	if err != nil {
 		resErr := common.ResponseError{
@@ -58,6 +55,36 @@ func (sah *SuperAdminHanler) CreateSuperAdmin(stub shim.ChaincodeStubInterface, 
 		ResCode: common.SUCCESS,
 		Msg:     common.ResCodeDict[common.SUCCESS],
 		Payload: string(bytes)}
+	return common.RespondSuccess(resSuc)
+}
+
+//GetAllSuperAdminWithPagination ...
+func (sah *ProposalHanler) GetAllSuperAdminWithPagination(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	var pagesize int32
+	errMarshal := json.Unmarshal([]byte(args[0]), &pagesize)
+	if errMarshal != nil {
+		// Return error: can't unmashal json
+		resErr := common.ResponseError{
+			ResCode: common.ERR4,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], errMarshal.Error(), common.GetLine())}
+		return common.RespondError(resErr)
+	}
+
+	res, err := util.QueryAllDataWithPagination(stub, model.SuperAdminTable, new(model.SuperAdmin), pagesize)
+	if err != nil {
+		resErr := common.ResponseError{common.ERR3, fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())}
+		return common.RespondError(resErr)
+	}
+
+	fmt.Printf("Datalist: %v\n", res)
+	dataJson, err2 := json.Marshal(res)
+	if err2 != nil {
+		//convert JSON eror
+		resErr := common.ResponseError{common.ERR6, common.ResCodeDict[common.ERR6]}
+		return common.RespondError(resErr)
+	}
+	fmt.Printf("Response: %s\n", string(dataJson))
+	resSuc := common.ResponseSuccess{common.SUCCESS, common.ResCodeDict[common.SUCCESS], string(dataJson)}
 	return common.RespondSuccess(resSuc)
 }
 

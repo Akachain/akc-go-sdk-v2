@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 	"time"
@@ -23,8 +22,7 @@ type ProposalHanler struct{}
 func (sah *ProposalHanler) CreateProposal(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	util.CheckChaincodeFunctionCallWellFormedness(args, 1)
 
-	//common.Logger.Infof("Create Proposal: %+v\n", args)
-	log.Printf("Create Proposal: %+v\n", args)
+	common.Logger.Infof("Create Proposal: %+v\n", args)
 
 	proposal := new(model.Proposal)
 	err := json.Unmarshal([]byte(args[0]), proposal)
@@ -39,8 +37,7 @@ func (sah *ProposalHanler) CreateProposal(stub shim.ChaincodeStubInterface, args
 	proposal.ProposalID = stub.GetTxID()
 	proposal.Status = "Pending"
 
-	//common.Logger.Infof("Create Proposal: %+v\n", proposal)
-	log.Printf("Create Proposal: %+v\n", proposal)
+	common.Logger.Infof("Create Proposal: %+v\n", proposal)
 	err = util.CreateData(stub, model.ProposalTable, []string{proposal.ProposalID}, &proposal)
 	if err != nil {
 		resErr := common.ResponseError{
@@ -66,10 +63,39 @@ func (sah *ProposalHanler) CreateProposal(stub shim.ChaincodeStubInterface, args
 	return common.RespondSuccess(resSuc)
 }
 
+//GetAllProposalWithPagination ...
+func (sah *ProposalHanler) GetAllProposalWithPagination(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	var pagesize int32
+	errMarshal := json.Unmarshal([]byte(args[0]), &pagesize)
+	if errMarshal != nil {
+		// Return error: can't unmashal json
+		resErr := common.ResponseError{
+			ResCode: common.ERR4,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], errMarshal.Error(), common.GetLine())}
+		return common.RespondError(resErr)
+	}
+
+	res, err := util.QueryAllDataWithPagination(stub, model.ProposalTable, new(model.Proposal), pagesize)
+	if err != nil {
+		resErr := common.ResponseError{common.ERR3, fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())}
+		return common.RespondError(resErr)
+	}
+
+	fmt.Printf("Datalist: %v\n", res)
+	dataJson, err2 := json.Marshal(res)
+	if err2 != nil {
+		//convert JSON eror
+		resErr := common.ResponseError{common.ERR6, common.ResCodeDict[common.ERR6]}
+		return common.RespondError(resErr)
+	}
+	fmt.Printf("Response: %s\n", string(dataJson))
+	resSuc := common.ResponseSuccess{common.SUCCESS, common.ResCodeDict[common.SUCCESS], string(dataJson)}
+	return common.RespondSuccess(resSuc)
+}
+
 // GetProposalByID ...
 func (sah *ProposalHanler) GetProposalByID(stub shim.ChaincodeStubInterface, proposalID string) (result *string, err error) {
-	//common.Logger.Debugf("Input-data sent to GetProposalByID func: %+v\n", proposalID)
-	log.Printf("Input-data sent to GetProposalByID func: %+v\n", proposalID)
+	common.Logger.Debugf("Input-data sent to GetProposalByID func: %+v\n", proposalID)
 
 	rawProposal, err := util.GetDataById(stub, proposalID, model.ProposalTable)
 	if err != nil {
@@ -92,8 +118,7 @@ func (sah *ProposalHanler) GetProposalByID(stub shim.ChaincodeStubInterface, pro
 
 // GetPendingProposalBySuperAdminID ...
 func (sah *ProposalHanler) GetPendingProposalBySuperAdminID(stub shim.ChaincodeStubInterface, superAdminID string) (result *string, err error) {
-	//common.Logger.Debugf("Input-data sent to GetPendingProposalBySuperAdminID func: %+v\n", superAdminID)
-	log.Printf("Input-data sent to GetPendingProposalBySuperAdminID func: %+v\n", superAdminID)
+	common.Logger.Debugf("Input-data sent to GetPendingProposalBySuperAdminID func: %+v\n", superAdminID)
 
 	var proposalList []model.Proposal
 
@@ -215,8 +240,7 @@ func (sah *ProposalHanler) UpdateProposal(stub shim.ChaincodeStubInterface, args
 
 //CommitProposal ...
 func (sah *ProposalHanler) CommitProposal(stub shim.ChaincodeStubInterface, proposalID string) (result *string, err error) {
-	//common.Logger.Debugf("Input-data sent to CommitProposal func: %+v\n", proposalID)
-	log.Printf("Input-data sent to CommitProposal func: %+v\n", proposalID)
+	common.Logger.Debugf("Input-data sent to CommitProposal func: %+v\n", proposalID)
 
 	proposalStr, err := sah.GetProposalByID(stub, proposalID)
 	if err != nil {

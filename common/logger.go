@@ -23,9 +23,12 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
+
+	"github.com/InVisionApp/go-logger"
 )
 
 //var Logger = shim.NewLogger("logger")
+var Logger = log.NewSimple()
 
 func GetLine(depthList ...int) string {
 	var depth int
