@@ -72,9 +72,7 @@ func QueryAllDataWithPagination(stub shim.ChaincodeStubInterface, MODELTABLE str
 
 	var queryString = fmt.Sprintf(`
 		{ "selector": 
-			{ 	
-				"Status": 
-					{ "$eq": "Waiting" },
+			{
 				"_id": 
 					{"$gt": "\u0000%s",
 					"$lt": "\u0000%s\uFFFF"}			
