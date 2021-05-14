@@ -287,9 +287,7 @@ func getProposalData(stub shim.ChaincodeStubInterface, pagesize int32) ([]model.
 
 	var queryString = `
 		{ "selector": 
-			{ 	
-				"Status": 
-					{ "$eq": "Waiting" },
+			{
 				"_id": 
 					{"$gt": "\u0000Proposal",
 					"$lt": "\u0000Proposal\uFFFF"}			
