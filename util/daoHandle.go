@@ -76,8 +76,12 @@ func QueryAllDataWithPagination(stub shim.ChaincodeStubInterface, MODELTABLE str
 				"_id": 
 					{"$gt": "\u0000%s",
 					"$lt": "\u0000%s\uFFFF"}			
-			}
-		}`, MODELTABLE, MODELTABLE)
+			},
+			"sort": [
+				"CreatedAt"
+			],
+			"use_index":["index%sDoc","index%s"]
+		}`, MODELTABLE, MODELTABLE, MODELTABLE, MODELTABLE)
 
 	common.Logger.Debugf("Get Query String %s", queryString)
 	resultsIterator, _, err := stub.GetQueryResultWithPagination(queryString, pagesize, "")

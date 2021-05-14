@@ -1,0 +1,17 @@
+{
+  "index": {
+    "partial_filter_selector": {
+      "Status": "Available",
+      "_id": {
+        "$gt": "\u0000Proposal",
+        "$lt": "\u0000Proposal\uFFFF"
+      }
+    },
+    "fields": [
+      "_id"
+    ]
+  },
+  "ddoc": "indexProposalDoc",
+  "name": "indexProposal",
+  "type" : "json"
+}

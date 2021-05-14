@@ -1,0 +1,17 @@
+{
+  "index": {
+    "partial_filter_selector": {
+      "Status": "Available",
+      "_id": {
+        "$gt": "\u0000Admin",
+        "$lt": "\u0000Admin\uFFFF"
+      }
+    },
+    "fields": [
+      "_id"
+    ]
+  },
+  "ddoc": "indexAdminDoc",
+  "name": "indexAdmin",
+  "type" : "json"
+}

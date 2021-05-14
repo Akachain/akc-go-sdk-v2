@@ -1,0 +1,17 @@
+{
+  "index": {
+    "partial_filter_selector": {
+      "Status": "Available",
+      "_id": {
+        "$gt": "\u0000Approval",
+        "$lt": "\u0000Approval\uFFFF"
+      }
+    },
+    "fields": [
+      "_id"
+    ]
+  },
+  "ddoc": "indexApprovalDoc",
+  "name": "indexApproval",
+  "type" : "json"
+}

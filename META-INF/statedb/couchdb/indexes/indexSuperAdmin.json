@@ -1,0 +1,17 @@
+{
+  "index": {
+    "partial_filter_selector": {
+      "Status": "Available",
+      "_id": {
+        "$gt": "\u0000SuperAdmin",
+        "$lt": "\u0000SuperAdmin\uFFFF"
+      }
+    },
+    "fields": [
+      "_id"
+    ]
+  },
+  "ddoc": "indexSuperAdminDoc",
+  "name": "indexSuperAdmin",
+  "type" : "json"
+}
