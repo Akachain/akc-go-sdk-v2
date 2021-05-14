@@ -63,8 +63,8 @@ func (sah *ProposalHanler) CreateProposal(stub shim.ChaincodeStubInterface, args
 	return common.RespondSuccess(resSuc)
 }
 
-//GetAllProposalWithPagination ...
-func (sah *ProposalHanler) GetAllProposalWithPagination(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+//GetAllProposal ...
+func (sah *ProposalHanler) GetAllProposal(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var pagesize int32
 	errMarshal := json.Unmarshal([]byte(args[0]), &pagesize)
 	if errMarshal != nil {
