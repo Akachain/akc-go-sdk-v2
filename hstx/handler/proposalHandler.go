@@ -75,8 +75,8 @@ func (sah *ProposalHanler) GetAllProposal(stub shim.ChaincodeStubInterface, args
 	//	return common.RespondError(resErr)
 	//}
 
-	//res, err := util.QueryAllDataWithPagination(stub, model.ProposalTable, new(model.Proposal), 5)
-	res, err := getProposalData(stub, 5)
+	res, err := util.QueryAllDataWithPagination(stub, model.ProposalTable, new(model.Proposal), 5)
+	//res, err := getProposalData(stub, 5)
 	if err != nil {
 		resErr := common.ResponseError{common.ERR3, fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())}
 		return common.RespondError(resErr)
