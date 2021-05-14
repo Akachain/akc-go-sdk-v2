@@ -65,17 +65,6 @@ func (sah *ProposalHanler) CreateProposal(stub shim.ChaincodeStubInterface, args
 
 //GetAllProposal ...
 func (sah *ProposalHanler) GetAllProposal(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	//var pagesize int32
-	//errMarshal := json.Unmarshal([]byte(args[0]), &pagesize)
-	//if errMarshal != nil {
-	//	// Return error: can't unmashal json
-	//	resErr := common.ResponseError{
-	//		ResCode: common.ERR4,
-	//		Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], errMarshal.Error(), common.GetLine())}
-	//	return common.RespondError(resErr)
-	//}
-
-	//res, err := util.QueryAllDataWithPagination(stub, model.ProposalTable, new(model.Proposal), 5)
 	res, err := getProposalData(stub, 5)
 	if err != nil {
 		resErr := common.ResponseError{common.ERR3, fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())}
@@ -282,8 +271,8 @@ func (sah *ProposalHanler) CommitProposal(stub shim.ChaincodeStubInterface, prop
 
 func getProposalData(stub shim.ChaincodeStubInterface, pagesize int32) ([]model.Proposal, error) {
 	//defer lib.TimeTrack(time.Now(), "getTxUsedData", loggerAccountBatch)
-	var txUsedResult = new(model.Proposal)
-	var txUsedList = []model.Proposal{}
+	var result = new(model.Proposal)
+	var list = []model.Proposal{}
 
 	var queryString = `
 		{ "selector": 
@@ -307,7 +296,7 @@ func getProposalData(stub shim.ChaincodeStubInterface, pagesize int32) ([]model.
 	// Check data respose after query in database
 	if !resultsIterator.HasNext() {
 		// Return with txUsedList empty
-		return txUsedList, nil
+		return list, nil
 		// return nil, errors.New(lib.ResCodeDict[lib.ERR3])
 	}
 
@@ -316,11 +305,11 @@ func getProposalData(stub shim.ChaincodeStubInterface, pagesize int32) ([]model.
 		if err != nil {
 			return nil, err
 		}
-		err = json.Unmarshal(queryResponse.Value, txUsedResult)
+		err = json.Unmarshal(queryResponse.Value, result)
 		if err != nil {
 			continue
 		}
-		txUsedList = append(txUsedList, *txUsedResult)
+		list = append(list, *result)
 	}
-	return txUsedList, nil
+	return list, nil
 }

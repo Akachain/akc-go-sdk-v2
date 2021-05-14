@@ -64,52 +64,6 @@ func CreateData(stub shim.ChaincodeStubInterface, DocPrefix string, rowKey []str
 	return nil //success
 }
 
-// QueryAllDataWithPagination ...
-func QueryAllDataWithPagination(stub shim.ChaincodeStubInterface, MODELTABLE string, data interface{}, pagesize int32) ([]interface{}, error) {
-	//defer lib.TimeTrack(time.Now(), "getTxUsedData", loggerAccountBatch)
-	var dataResult = data
-	var dataList []interface{}
-
-	var queryString = fmt.Sprintf(`
-		{ "selector": 
-			{
-				"_id": 
-					{"$gt": "\u0000%s",
-					"$lt": "\u0000%s\uFFFF"}			
-			},
-			"use_index":["index%sDoc","index%s"]
-		}`, MODELTABLE, MODELTABLE, MODELTABLE, MODELTABLE)
-
-	common.Logger.Debugf("Get Query String %s", queryString)
-	resultsIterator, _, err := stub.GetQueryResultWithPagination(queryString, pagesize, "")
-	common.Logger.Debug("Finish Get query")
-
-	if err != nil {
-		return nil, err
-	}
-	defer resultsIterator.Close()
-
-	// Check data respose after query in database
-	if !resultsIterator.HasNext() {
-		// Return with txUsedList empty
-		return dataList, nil
-		// return nil, errors.New(lib.ResCodeDict[lib.ERR3])
-	}
-
-	for resultsIterator.HasNext() {
-		queryResponse, err := resultsIterator.Next()
-		if err != nil {
-			return nil, err
-		}
-		err = json.Unmarshal(queryResponse.Value, dataResult)
-		if err != nil {
-			continue
-		}
-		dataList = append(dataList, dataResult)
-	}
-	return dataList, nil
-}
-
 // GetDataById get the state value of a key from the state database
 // It returns a generic object.
 func GetDataById(stub shim.ChaincodeStubInterface, ID string, DocPrefix string) (interface{}, error) {

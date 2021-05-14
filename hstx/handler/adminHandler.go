@@ -61,17 +61,7 @@ func (sah *AdminHanler) CreateAdmin(stub shim.ChaincodeStubInterface, args []str
 
 //GetAllAdmin ...
 func (sah *AdminHanler) GetAllAdmin(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	//var pagesize int32
-	//errMarshal := json.Unmarshal([]byte(args[0]), &pagesize)
-	//if errMarshal != nil {
-	//	// Return error: can't unmashal json
-	//	resErr := common.ResponseError{
-	//		ResCode: common.ERR4,
-	//		Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], errMarshal.Error(), common.GetLine())}
-	//	return common.RespondError(resErr)
-	//}
-
-	res, err := util.QueryAllDataWithPagination(stub, model.AdminTable, new(model.Admin), 5)
+	res, err := getAdminData(stub, 5)
 	if err != nil {
 		resErr := common.ResponseError{common.ERR3, fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())}
 		return common.RespondError(resErr)
@@ -163,4 +153,49 @@ func (sah *AdminHanler) UpdateAdmin(stub shim.ChaincodeStubInterface, args []str
 		Msg:     common.ResCodeDict[common.SUCCESS],
 		Payload: string(bytes)}
 	return common.RespondSuccess(resSuc)
+}
+
+func getAdminData(stub shim.ChaincodeStubInterface, pagesize int32) ([]model.Admin, error) {
+	//defer lib.TimeTrack(time.Now(), "getTxUsedData", loggerAccountBatch)
+	var result = new(model.Admin)
+	var list = []model.Admin{}
+
+	var queryString = `
+		{ "selector": 
+			{
+				"_id": 
+					{"$gt": "\u0000Admin",
+					"$lt": "\u0000Admin\uFFFF"}			
+			},
+			"use_index":["indexAdminDoc","indexAdmin"]
+		}`
+
+	common.Logger.Debugf("Get Query String %s", queryString)
+	resultsIterator, _, err := stub.GetQueryResultWithPagination(queryString, pagesize, "")
+	common.Logger.Debug("Finish Get query")
+
+	if err != nil {
+		return nil, err
+	}
+	defer resultsIterator.Close()
+
+	// Check data respose after query in database
+	if !resultsIterator.HasNext() {
+		// Return with txUsedList empty
+		return list, nil
+		// return nil, errors.New(lib.ResCodeDict[lib.ERR3])
+	}
+
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(queryResponse.Value, result)
+		if err != nil {
+			continue
+		}
+		list = append(list, *result)
+	}
+	return list, nil
 }
