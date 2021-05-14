@@ -75,21 +75,16 @@ func (sah *ProposalHanler) GetAllProposal(stub shim.ChaincodeStubInterface, args
 	//	return common.RespondError(resErr)
 	//}
 
-	res, err := util.QueryAllDataWithPagination(stub, model.ProposalTable, new(model.Proposal), 5)
+	//res, err := util.QueryAllDataWithPagination(stub, model.ProposalTable, new(model.Proposal), 5)
+	res, err := getProposalData(stub, 5)
 	if err != nil {
 		resErr := common.ResponseError{common.ERR3, fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())}
 		return common.RespondError(resErr)
 	}
 
-	fmt.Printf("Datalist: %v\n", res)
-	dataJson, err2 := json.Marshal(res)
-	if err2 != nil {
-		//convert JSON eror
-		resErr := common.ResponseError{common.ERR6, common.ResCodeDict[common.ERR6]}
-		return common.RespondError(resErr)
-	}
-	fmt.Printf("Response: %s\n", string(dataJson))
-	resSuc := common.ResponseSuccess{common.SUCCESS, common.ResCodeDict[common.SUCCESS], string(dataJson)}
+	result, _ := json.Marshal(res)
+
+	resSuc := common.ResponseSuccess{common.SUCCESS, common.ResCodeDict[common.SUCCESS], string(result)}
 	return common.RespondSuccess(resSuc)
 }
 
@@ -283,4 +278,50 @@ func (sah *ProposalHanler) CommitProposal(stub shim.ChaincodeStubInterface, prop
 	*result = string(bytes)
 
 	return result, nil
+}
+
+func getProposalData(stub shim.ChaincodeStubInterface, pagesize int32) ([]model.Proposal, error) {
+	//defer lib.TimeTrack(time.Now(), "getTxUsedData", loggerAccountBatch)
+	var txUsedResult = new(model.Proposal)
+	var txUsedList = []model.Proposal{}
+
+	var queryString = `
+		{ "selector": 
+			{ 	
+				"Status": 
+					{ "$eq": "Waiting" },
+				"_id": 
+					{"$gt": "\u0000Proposal",
+					"$lt": "\u0000Proposal\uFFFF"}			
+			}
+		}`
+
+	common.Logger.Debugf("Get Query String %s", queryString)
+	resultsIterator, _, err := stub.GetQueryResultWithPagination(queryString, pagesize, "")
+	common.Logger.Debug("Finish Get query")
+
+	if err != nil {
+		return nil, err
+	}
+	defer resultsIterator.Close()
+
+	// Check data respose after query in database
+	if !resultsIterator.HasNext() {
+		// Return with txUsedList empty
+		return txUsedList, nil
+		// return nil, errors.New(lib.ResCodeDict[lib.ERR3])
+	}
+
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(queryResponse.Value, txUsedResult)
+		if err != nil {
+			continue
+		}
+		txUsedList = append(txUsedList, *txUsedResult)
+	}
+	return txUsedList, nil
 }

@@ -77,15 +77,9 @@ func (sah *AdminHanler) GetAllAdmin(stub shim.ChaincodeStubInterface, args []str
 		return common.RespondError(resErr)
 	}
 
-	fmt.Printf("Datalist: %v\n", res)
-	dataJson, err2 := json.Marshal(res)
-	if err2 != nil {
-		//convert JSON eror
-		resErr := common.ResponseError{common.ERR6, common.ResCodeDict[common.ERR6]}
-		return common.RespondError(resErr)
-	}
-	fmt.Printf("Response: %s\n", string(dataJson))
-	resSuc := common.ResponseSuccess{common.SUCCESS, common.ResCodeDict[common.SUCCESS], string(dataJson)}
+	result, _ := json.Marshal(res)
+
+	resSuc := common.ResponseSuccess{common.SUCCESS, common.ResCodeDict[common.SUCCESS], string(result)}
 	return common.RespondSuccess(resSuc)
 }
 
