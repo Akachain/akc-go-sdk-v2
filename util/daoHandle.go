@@ -77,9 +77,6 @@ func QueryAllDataWithPagination(stub shim.ChaincodeStubInterface, MODELTABLE str
 					{"$gt": "\u0000%s",
 					"$lt": "\u0000%s\uFFFF"}			
 			},
-			"sort": [
-				"CreatedAt"
-			],
 			"use_index":["index%sDoc","index%s"]
 		}`, MODELTABLE, MODELTABLE, MODELTABLE, MODELTABLE)
 
