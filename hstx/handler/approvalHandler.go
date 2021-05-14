@@ -77,7 +77,7 @@ func (sah *ApprovalHanler) CreateApproval(stub shim.ChaincodeStubInterface, args
 }
 
 //GetAllApproval ...
-func (sah *ProposalHanler) GetAllApproval(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (sah *ApprovalHanler) GetAllApproval(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var pagesize int32
 	errMarshal := json.Unmarshal([]byte(args[0]), &pagesize)
 	if errMarshal != nil {

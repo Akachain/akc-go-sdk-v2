@@ -60,7 +60,7 @@ func (sah *AdminHanler) CreateAdmin(stub shim.ChaincodeStubInterface, args []str
 }
 
 //GetAllAdmin ...
-func (sah *ProposalHanler) GetAllAdmin(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (sah *AdminHanler) GetAllAdmin(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var pagesize int32
 	errMarshal := json.Unmarshal([]byte(args[0]), &pagesize)
 	if errMarshal != nil {
