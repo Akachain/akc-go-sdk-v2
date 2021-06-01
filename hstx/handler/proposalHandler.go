@@ -110,11 +110,11 @@ func (sah *ProposalHanler) GetPendingProposalBySuperAdminID(stub shim.ChaincodeS
 		{ "selector": 
 			{
 				"_id": 
-					{"$gt": "\u0000SuperAdmin",
-					"$lt": "\u0000SuperAdmin\uFFFF"},
+					{"$gt": "\u0000Proposal",
+					"$lt": "\u0000Proposal\uFFFF"},
 				"$or": [
 					{ "Status": "Pending" },
-					{"Status": "Approved"}
+					{ "Status": "Approved" }
 				]
 			}
 		}`)
