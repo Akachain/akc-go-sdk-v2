@@ -106,7 +106,18 @@ func (sah *ProposalHanler) GetPendingProposalBySuperAdminID(stub shim.ChaincodeS
 
 	var proposalList []model.Proposal
 
-	queryStr := fmt.Sprintf("{\"selector\": {\"_id\": {\"$regex\": \"%s\"},\"$or\": [{\"Status\": \"Pending\"},{\"Status\": \"Approved\"}]}}", model.ProposalTable)
+	queryStr := fmt.Sprintf(`
+		{ "selector": 
+			{
+				"_id": 
+					{"$gt": "\u0000SuperAdmin",
+					"$lt": "\u0000SuperAdmin\uFFFF"},
+				"$or": [
+					{ "Status": "Pending" },
+					{"Status": "Approved"}
+				]
+			}
+		}`)
 	resultsIterator, err := stub.GetQueryResult(queryStr)
 	if err != nil {
 		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine())
