@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Akachain/akc-go-sdk-v2/common"
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"log"
 	"reflect" // This is only used in InterfaceIsNil
@@ -296,6 +297,24 @@ func DeleteTableRow(
 	// Return with success
 	err = nil
 	return
+}
+
+// GetContainKey func to get information
+func GetContainKey(stub shim.ChaincodeStubInterface, table string, key string) (resultsIterator shim.StateQueryIteratorInterface, err error) {
+	queryString := fmt.Sprintf(`
+		{ "selector": 
+			{
+				"_id": 
+					{"$gt": "\u0000%s\u0000%s",
+					"$lt": "\u0000%s\u0000%s\uFFFF"}
+			}
+		}`, table, key, table, key)
+	common.Logger.Info(queryString)
+	resultsIterator, err = stub.GetQueryResult(queryString)
+	if err != nil {
+		return nil, err
+	}
+	return resultsIterator, nil
 }
 
 // GetByTwoColumns func to get information

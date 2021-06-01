@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/Akachain/akc-go-sdk-v2/common"
 	"github.com/Akachain/akc-go-sdk-v2/hstx/model"
@@ -59,6 +60,9 @@ func (sah *ApprovalHanler) CreateApproval(stub shim.ChaincodeStubInterface, args
 		}
 		return common.RespondError(resErr)
 	}
+
+	// Update proposal if necessary
+	sah.updateProposal(stub, approval)
 
 	bytes, err := json.Marshal(approval)
 	if err != nil {
@@ -273,4 +277,72 @@ func getApprovalData(stub shim.ChaincodeStubInterface, pagesize int32) ([]model.
 		list = append(list, *result)
 	}
 	return list, nil
+}
+
+// updateProposal ...
+func (sah *ApprovalHanler) updateProposal(stub shim.ChaincodeStubInterface, approval *model.Approval) error {
+	rawProposal, err := util.GetDataById(stub, approval.ProposalID, model.ProposalTable)
+	if err != nil {
+		return err
+	}
+
+	proposal := new(model.Proposal)
+	mapstructure.Decode(rawProposal, proposal)
+
+	if strings.Compare(approval.Status, "Rejected") == 0 {
+		if strings.Compare(proposal.Status, "Commited") != 0 {
+			proposal.Status = approval.Status
+			proposal.UpdatedAt = approval.CreatedAt
+			bytes, err := json.Marshal(proposal)
+			if err != nil {
+				return err
+			}
+			new(ProposalHanler).UpdateProposal(stub, []string{string(bytes)})
+		}
+		return nil
+	}
+
+	resIterator, err := util.GetContainKey(stub, model.ApprovalTable, approval.ProposalID)
+	if err != nil {
+		return err
+	}
+	defer resIterator.Close()
+	count := 0
+	if approval.Status == "Approved" {
+		count++
+	}
+	for resIterator.HasNext() {
+		stateIterator, err := resIterator.Next()
+		if err != nil {
+			return err
+		}
+		approvalState := new(model.Approval)
+		err = json.Unmarshal(stateIterator.Value, approvalState)
+		if err != nil { // Convert JSON error
+			return err
+		}
+
+		if strings.Compare("Approved", approvalState.Status) == 0 {
+			count++
+		}
+	}
+	// Check approved number >= proposal.QuorumNumber to update the Proposal's satatus
+	if count >= proposal.QuorumNumber {
+		rawProposal, err := util.GetDataById(stub, approval.ProposalID, model.ProposalTable)
+		if err != nil {
+			return err
+		}
+		proposal := new(model.Proposal)
+		mapstructure.Decode(rawProposal, proposal)
+		if strings.Compare(proposal.Status, "Pending") == 0 {
+			proposal.Status = "Approved"
+			proposal.UpdatedAt = approval.CreatedAt
+			bytes, err := json.Marshal(proposal)
+			if err != nil {
+				return err
+			}
+			new(ProposalHanler).UpdateProposal(stub, []string{string(bytes)})
+		}
+	}
+	return nil
 }
