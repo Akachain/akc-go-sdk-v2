@@ -101,7 +101,16 @@ func (sah *ProposalHanler) GetProposalByID(stub shim.ChaincodeStubInterface, pro
 }
 
 // GetPendingProposalBySuperAdminID ...
-func (sah *ProposalHanler) GetPendingProposalBySuperAdminID(stub shim.ChaincodeStubInterface, superAdminID string) (result *string, err error) {
+func (sah *ProposalHanler) GetPendingProposalBySuperAdminID(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	superAdminID := ""
+	err := json.Unmarshal([]byte(args[0]), superAdminID)
+	if err != nil {
+		// Return error: can't unmashal json
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR3,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
+		})
+	}
 	common.Logger.Debugf("Input-data sent to GetPendingProposalBySuperAdminID func: %+v\n", superAdminID)
 
 	var proposalList []model.Proposal
@@ -120,19 +129,28 @@ func (sah *ProposalHanler) GetPendingProposalBySuperAdminID(stub shim.ChaincodeS
 		}`)
 	resultsIterator, err := stub.GetQueryResult(queryStr)
 	if err != nil {
-		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine())
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR4,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine()),
+		})
 	}
 	defer resultsIterator.Close()
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
 		if err != nil {
-			return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine())
+			return common.RespondError(common.ResponseError{
+				ResCode: common.ERR4,
+				Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine()),
+			})
 		}
 
 		proposal := new(model.Proposal)
 		err = json.Unmarshal(queryResponse.Value, proposal)
 		if err != nil { // Convert JSON error
-			return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())
+			return common.RespondError(common.ResponseError{
+				ResCode: common.ERR3,
+				Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
+			})
 		}
 		proposalList = append(proposalList, *proposal)
 	}
@@ -141,7 +159,10 @@ func (sah *ProposalHanler) GetPendingProposalBySuperAdminID(stub shim.ChaincodeS
 		proposal := proposalList[i]
 		rs, err := util.GetByTwoColumns(stub, model.ApprovalTable, "ProposalID", fmt.Sprintf("\"%s\"", proposal.ProposalID), "ApproverID", fmt.Sprintf("\"%s\"", superAdminID))
 		if err != nil {
-			return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine())
+			return common.RespondError(common.ResponseError{
+				ResCode: common.ERR4,
+				Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine()),
+			})
 		}
 		if rs.HasNext() {
 			proposalList[i] = proposalList[len(proposalList)-1]
@@ -149,15 +170,16 @@ func (sah *ProposalHanler) GetPendingProposalBySuperAdminID(stub shim.ChaincodeS
 		}
 	}
 
-	bytes, err := json.Marshal(proposalList)
+	result, err := json.Marshal(proposalList)
 	if err != nil { // Return error: Can't marshal json
-		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR3,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
+		})
 	}
-	temp := ""
-	result = &temp
-	*result = string(bytes)
 
-	return result, nil
+	resSuc := common.ResponseSuccess{common.SUCCESS, common.ResCodeDict[common.SUCCESS], string(result)}
+	return common.RespondSuccess(resSuc)
 }
 
 //UpdateProposal ...
@@ -234,50 +256,78 @@ func (sah *ProposalHanler) UpdateProposal(stub shim.ChaincodeStubInterface, args
 }
 
 //CommitProposal ...
-func (sah *ProposalHanler) CommitProposal(stub shim.ChaincodeStubInterface, proposalID string) (result *string, err error) {
+func (sah *ProposalHanler) CommitProposal(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	proposalID := ""
+	err := json.Unmarshal([]byte(args[0]), proposalID)
+	if err != nil {
+		// Return error: can't unmashal json
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR3,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
+		})
+	}
 	common.Logger.Debugf("Input-data sent to CommitProposal func: %+v\n", proposalID)
 
 	proposalStr, err := sah.GetProposalByID(stub, proposalID)
 	if err != nil {
-		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine())
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR4,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine()),
+		})
 	}
 
 	var proposal model.Proposal
 	err = json.Unmarshal([]byte(*proposalStr), &proposal)
 	if err != nil {
-		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR3,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
+		})
 	}
 
 	if strings.Compare("Pending", proposal.Status) == 0 {
-		return nil, fmt.Errorf("%s %s", "Not enough approval", common.GetLine())
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR3,
+			Msg:     fmt.Sprintf("%s %s", "Not enough approval", err.Error(), common.GetLine()),
+		})
 	}
 
 	if strings.Compare("Rejected", proposal.Status) == 0 {
-		return nil, fmt.Errorf("%s %s", "The proposal was rejected", common.GetLine())
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR3,
+			Msg:     fmt.Sprintf("%s %s", "The proposal was rejected", err.Error(), common.GetLine()),
+		})
 	}
 
 	proposal.Status = "Committed"
 	timestamp, err := stub.GetTxTimestamp()
 	if err != nil {
-		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine())
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR4,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine()),
+		})
 	}
 	updatedTime := time.Unix(timestamp.Seconds, 0)
 	proposal.UpdatedAt = updatedTime.String()
 
 	err = util.ChangeInfo(stub, model.ProposalTable, []string{proposal.ProposalID}, proposal)
 	if err != nil { // Return error: Fail to Update data
-		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR5], err.Error(), common.GetLine())
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR5,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR5], err.Error(), common.GetLine()),
+		})
 	}
 
-	bytes, err := json.Marshal(proposal)
+	result, err := json.Marshal(proposal)
 	if err != nil { // Return error: Can't marshal json
-		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR3,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
+		})
 	}
-	temp := ""
-	result = &temp
-	*result = string(bytes)
 
-	return result, nil
+	resSuc := common.ResponseSuccess{common.SUCCESS, common.ResCodeDict[common.SUCCESS], string(result)}
+	return common.RespondSuccess(resSuc)
 }
 
 func getProposalData(stub shim.ChaincodeStubInterface, pagesize int32) ([]model.Proposal, error) {
