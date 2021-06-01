@@ -165,8 +165,7 @@ func getSuperAdminData(stub shim.ChaincodeStubInterface, pagesize int32) ([]mode
 				"_id": 
 					{"$gt": "\u0000SuperAdmin",
 					"$lt": "\u0000SuperAdmin\uFFFF"}			
-			},
-			"use_index":["indexSuperAdminDoc","indexSuperAdmin"]
+			}
 		}`
 
 	common.Logger.Debugf("Get Query String %s", queryString)

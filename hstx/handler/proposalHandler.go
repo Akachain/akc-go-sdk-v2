@@ -280,8 +280,7 @@ func getProposalData(stub shim.ChaincodeStubInterface, pagesize int32) ([]model.
 				"_id": 
 					{"$gt": "\u0000Proposal",
 					"$lt": "\u0000Proposal\uFFFF"}			
-			},
-			"use_index":["indexProposalDoc","indexProposal"]
+			}
 		}`
 
 	common.Logger.Debugf("Get Query String %s", queryString)

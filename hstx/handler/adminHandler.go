@@ -166,8 +166,7 @@ func getAdminData(stub shim.ChaincodeStubInterface, pagesize int32) ([]model.Adm
 				"_id": 
 					{"$gt": "\u0000Admin",
 					"$lt": "\u0000Admin\uFFFF"}			
-			},
-			"use_index":["indexAdminDoc","indexAdmin"]
+			}
 		}`
 
 	common.Logger.Debugf("Get Query String %s", queryString)

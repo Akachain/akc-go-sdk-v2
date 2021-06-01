@@ -242,8 +242,7 @@ func getApprovalData(stub shim.ChaincodeStubInterface, pagesize int32) ([]model.
 				"_id": 
 					{"$gt": "\u0000Approval",
 					"$lt": "\u0000Approval\uFFFF"}			
-			},
-			"use_index":["indexApprovalDoc","indexApproval"]
+			}
 		}`
 
 	common.Logger.Debugf("Get Query String %s", queryString)
