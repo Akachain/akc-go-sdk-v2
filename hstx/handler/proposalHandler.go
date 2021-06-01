@@ -102,15 +102,15 @@ func (sah *ProposalHanler) GetProposalByID(stub shim.ChaincodeStubInterface, pro
 
 // GetPendingProposalBySuperAdminID ...
 func (sah *ProposalHanler) GetPendingProposalBySuperAdminID(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	superAdminID := ""
-	err := json.Unmarshal([]byte(args[0]), superAdminID)
-	if err != nil {
-		// Return error: can't unmashal json
-		return common.RespondError(common.ResponseError{
-			ResCode: common.ERR3,
-			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
-		})
-	}
+	superAdminID := args[0]
+	//err := json.Unmarshal([]byte(args[0]), superAdminID)
+	//if err != nil {
+	//	// Return error: can't unmashal json
+	//	return common.RespondError(common.ResponseError{
+	//		ResCode: common.ERR3,
+	//		Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
+	//	})
+	//}
 	common.Logger.Debugf("Input-data sent to GetPendingProposalBySuperAdminID func: %+v\n", superAdminID)
 
 	var proposalList []model.Proposal
@@ -257,15 +257,15 @@ func (sah *ProposalHanler) UpdateProposal(stub shim.ChaincodeStubInterface, args
 
 //CommitProposal ...
 func (sah *ProposalHanler) CommitProposal(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	proposalID := ""
-	err := json.Unmarshal([]byte(args[0]), proposalID)
-	if err != nil {
-		// Return error: can't unmashal json
-		return common.RespondError(common.ResponseError{
-			ResCode: common.ERR3,
-			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
-		})
-	}
+	proposalID := args[0]
+	//err := json.Unmarshal([]byte(args[0]), proposalID)
+	//if err != nil {
+	//	// Return error: can't unmashal json
+	//	return common.RespondError(common.ResponseError{
+	//		ResCode: common.ERR3,
+	//		Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
+	//	})
+	//}
 	common.Logger.Debugf("Input-data sent to CommitProposal func: %+v\n", proposalID)
 
 	proposalStr, err := sah.GetProposalByID(stub, proposalID)
