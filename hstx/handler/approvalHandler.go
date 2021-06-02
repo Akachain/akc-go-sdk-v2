@@ -51,8 +51,8 @@ func (sah *ApprovalHanler) CreateApproval(stub shim.ChaincodeStubInterface, args
 	err = sah.checkApproverStatus(stub, approval.ApproverID)
 	if err != nil {
 		return common.RespondError(common.ResponseError{
-			ResCode: common.ERR3,
-			Msg:     fmt.Sprintf("%s %s %s", "This approver is not active", err.Error(), common.GetLine()),
+			ResCode: common.ERR20,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR20], err.Error(), common.GetLine()),
 		})
 	}
 
@@ -77,8 +77,8 @@ func (sah *ApprovalHanler) CreateApproval(stub shim.ChaincodeStubInterface, args
 	// Check whether the proposal was rejected or not
 	if strings.Compare("Rejected", proposal.Status) == 0 {
 		return common.RespondError(common.ResponseError{
-			ResCode: common.ERR3,
-			Msg:     fmt.Sprintf("%s %s", "The proposal was rejected", err.Error(), common.GetLine()),
+			ResCode: common.ERR16,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR16], err.Error(), common.GetLine()),
 		})
 	}
 
@@ -94,7 +94,7 @@ func (sah *ApprovalHanler) CreateApproval(stub shim.ChaincodeStubInterface, args
 	if len(rs) > 0 { // Return error: Only signing once
 		return common.RespondError(common.ResponseError{
 			ResCode: common.ERR9,
-			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR9], "This proposal had already been approved", common.GetLine()),
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR9], common.ResCodeDict[common.ERR9], common.GetLine()),
 		})
 	}
 

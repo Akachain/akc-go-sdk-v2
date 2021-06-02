@@ -48,6 +48,8 @@ const (
 	ERR16   = "AKC0016"
 	ERR17   = "AKC0017"
 	ERR18   = "AKC0018"
+	ERR19   = "AKC0019"
+	ERR20   = "AKC0020"
 )
 
 var ResCodeDict = map[string]string{
@@ -70,6 +72,8 @@ var ResCodeDict = map[string]string{
 	"AKC0016": "Proposal Rejected!",
 	"AKC0017": "You have confirmed you cannot reject!",
 	"AKC0018": "Only reject once!",
+	"AKC0019": "This ApprovalID can't be empty",
+	"AKC0020": "Approver not Active!",
 }
 
 type InvokeResponse struct {

@@ -33,6 +33,7 @@ func (sah *ProposalHanler) CreateProposal(stub shim.ChaincodeStubInterface, args
 
 	proposal.ProposalID = util.GenerateDocumentID(stub)
 	proposal.Status = "Pending"
+	proposal.QuorumNumber = 3
 
 	timestamp, err := stub.GetTxTimestamp()
 	if err != nil {
@@ -238,8 +239,8 @@ func (sah *ProposalHanler) UpdateProposal(stub shim.ChaincodeStubInterface, args
 
 	if len(newProposal.ProposalID) == 0 {
 		return common.RespondError(common.ResponseError{
-			ResCode: common.ERR3,
-			Msg:     fmt.Sprintf("%s %s", "This ApprovalID can't be empty", err.Error(), common.GetLine()),
+			ResCode: common.ERR19,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR19], err.Error(), common.GetLine()),
 		})
 	}
 
@@ -394,15 +395,15 @@ func (sah *ProposalHanler) CommitProposal(stub shim.ChaincodeStubInterface, args
 
 	if strings.Compare("Pending", proposal.Status) == 0 {
 		return common.RespondError(common.ResponseError{
-			ResCode: common.ERR3,
-			Msg:     fmt.Sprintf("%s %s", "Not enough approval", err.Error(), common.GetLine()),
+			ResCode: common.ERR10,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR10], err.Error(), common.GetLine()),
 		})
 	}
 
 	if strings.Compare("Rejected", proposal.Status) == 0 {
 		return common.RespondError(common.ResponseError{
-			ResCode: common.ERR3,
-			Msg:     fmt.Sprintf("%s %s", "The proposal was rejected", err.Error(), common.GetLine()),
+			ResCode: common.ERR16,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR16], err.Error(), common.GetLine()),
 		})
 	}
 
