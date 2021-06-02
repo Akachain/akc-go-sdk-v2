@@ -71,7 +71,7 @@ func getTableRowAndCompositeKey(
 
 	// Form the composite key that will index this table row in the ledger state key/value store.
 	composite_key, err = stub.CreateCompositeKey(table_name, row_keys)
-	common.Logger.Debugf("Composite key in functiongetTableRowAndCompositeKey: %v", composite_key)
+	common.Logger.Debugf("Composite key in function getTableRowAndCompositeKey: %v", composite_key)
 	if err != nil {
 		composite_key = ""
 		err = fmt.Errorf("GetTableRow failed because stub.CreateCompositeKey failed with error %v", err)
@@ -128,7 +128,6 @@ func GetTableRow(
 	failure_option GetTableRow_FailureOption,
 ) (rowWasFound bool, err error) {
 	_, rowWasFound, err = getTableRowAndCompositeKey(stub, table_name, row_keys, row_value, failure_option)
-	common.Logger.Errorf("Error in GetTableRow function: %s", err.Error())
 	return
 }
 
