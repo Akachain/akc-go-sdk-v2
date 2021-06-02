@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/Akachain/akc-go-sdk-v2/common"
 	"github.com/Akachain/akc-go-sdk-v2/hstx/model"
@@ -26,10 +27,17 @@ type ApprovalHanler struct{}
 
 // CreateApproval ...
 func (sah *ApprovalHanler) CreateApproval(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	util.CheckChaincodeFunctionCallWellFormedness(args, 3)
+	// Check role: SuperAdmin
+	err := util.IsSuperAdmin(stub)
+	if err != nil {
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR3,
+			Msg:     fmt.Sprintf("%s %s %s", err.Error(), common.GetLine()),
+		})
+	}
 
 	approval := new(model.Approval)
-	err := json.Unmarshal([]byte(args[0]), approval)
+	err = json.Unmarshal([]byte(args[0]), approval)
 	if err != nil {
 		// Return error: can't unmashal json
 		return common.RespondError(common.ResponseError{
@@ -37,39 +45,97 @@ func (sah *ApprovalHanler) CreateApproval(stub shim.ChaincodeStubInterface, args
 			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
 		})
 	}
+	common.Logger.Debugf("Input-data sent to CreateApproval func: %+v\n", approval)
 
-	approval.ApprovalID = stub.GetTxID()
+	// Check SuperAdmin's status
+	err = sah.checkApproverStatus(stub, approval.ApproverID)
+	if err != nil {
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR3,
+			Msg:     fmt.Sprintf("%s %s %s", "This approver is not active", err.Error(), common.GetLine()),
+		})
+	}
 
+	// Get proposal by approval.ProposalID
+	proposalStr, err := new(ProposalHanler).GetProposalByID(stub, approval.ProposalID)
+	if err != nil {
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR4,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine()),
+		})
+	}
+
+	var proposal model.Proposal
+	err = json.Unmarshal([]byte(*proposalStr), &proposal)
+	if err != nil {
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR3,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
+		})
+	}
+
+	// Check whether the proposal was rejected or not
+	if strings.Compare("Rejected", proposal.Status) == 0 {
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR3,
+			Msg:     fmt.Sprintf("%s %s", "The proposal was rejected", err.Error(), common.GetLine()),
+		})
+	}
+
+	// Check this approver hasn't signed the proposal
+	compositeKey, _ := stub.CreateCompositeKey(model.ApprovalTable, []string{approval.ProposalID, approval.ApproverID})
+	rs, err := stub.GetState(compositeKey)
+	if err != nil { // Return error: Fail to get data
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR4,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine()),
+		})
+	}
+	if len(rs) > 0 { // Return error: Only signing once
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR9,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR9], "This proposal had already been approved", common.GetLine()),
+		})
+	}
+
+	// Verify signature with the singed message
 	err = sah.verifySignature(stub, approval.ApproverID, approval.Signature, approval.Message)
-	if err != nil {
-		// Return error: can't unmashal json
+	if err != nil { // Return error: Verify error
 		return common.RespondError(common.ResponseError{
-			ResCode: common.ERR3,
-			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
+			ResCode: common.ERR8,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR8], err.Error(), common.GetLine()),
 		})
 	}
 
-	approval.Status = "Verified"
-
-	common.Logger.Infof("Create Approval: %+v\n", approval)
-	err = util.CreateData(stub, model.ApprovalTable, []string{approval.ApprovalID}, &approval)
+	// Set approval.ApprovalID & approval.CreatedAt
+	approval.ApprovalID = util.GenerateDocumentID(stub)
+	timestamp, err := stub.GetTxTimestamp()
 	if err != nil {
-		resErr := common.ResponseError{
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR4,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine()),
+		})
+	}
+	approval.CreatedAt = time.Unix(timestamp.Seconds, 0).Format(time.RFC3339)
+
+	// Create Approval
+	common.Logger.Infof("Creating Approval: %+v\n", approval)
+	err = util.CreateData(stub, model.ApprovalTable, []string{approval.ProposalID, approval.ApproverID}, &approval)
+	if err != nil { // Return error: Fail to insert data
+		return common.RespondError(common.ResponseError{
 			ResCode: common.ERR5,
 			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR5], err.Error(), common.GetLine()),
-		}
-		return common.RespondError(resErr)
+		})
 	}
 
 	// Update proposal if necessary
 	sah.updateProposal(stub, approval)
 
 	bytes, err := json.Marshal(approval)
-	if err != nil {
-		// Return error: can't mashal json
+	if err != nil { // Return error: Can't marshal json
 		return common.RespondError(common.ResponseError{
-			ResCode: common.ERR5,
-			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR5], err.Error(), common.GetLine()),
+			ResCode: common.ERR3,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
 		})
 	}
 
@@ -79,6 +145,62 @@ func (sah *ApprovalHanler) CreateApproval(stub shim.ChaincodeStubInterface, args
 		Payload: string(bytes)}
 	return common.RespondSuccess(resSuc)
 }
+
+// CreateApproval ...
+//func (sah *ApprovalHanler) CreateApproval(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+//	util.CheckChaincodeFunctionCallWellFormedness(args, 3)
+//
+//	approval := new(model.Approval)
+//	err := json.Unmarshal([]byte(args[0]), approval)
+//	if err != nil {
+//		// Return error: can't unmashal json
+//		return common.RespondError(common.ResponseError{
+//			ResCode: common.ERR3,
+//			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
+//		})
+//	}
+//
+//	approval.ApprovalID = stub.GetTxID()
+//
+//	err = sah.verifySignature(stub, approval.ApproverID, approval.Signature, approval.Message)
+//	if err != nil {
+//		// Return error: can't unmashal json
+//		return common.RespondError(common.ResponseError{
+//			ResCode: common.ERR3,
+//			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
+//		})
+//	}
+//
+//	approval.Status = "Verified"
+//
+//	common.Logger.Infof("Create Approval: %+v\n", approval)
+//	err = util.CreateData(stub, model.ApprovalTable, []string{approval.ApprovalID}, &approval)
+//	if err != nil {
+//		resErr := common.ResponseError{
+//			ResCode: common.ERR5,
+//			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR5], err.Error(), common.GetLine()),
+//		}
+//		return common.RespondError(resErr)
+//	}
+//
+//	// Update proposal if necessary
+//	sah.updateProposal(stub, approval)
+//
+//	bytes, err := json.Marshal(approval)
+//	if err != nil {
+//		// Return error: can't mashal json
+//		return common.RespondError(common.ResponseError{
+//			ResCode: common.ERR5,
+//			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR5], err.Error(), common.GetLine()),
+//		})
+//	}
+//
+//	resSuc := common.ResponseSuccess{
+//		ResCode: common.SUCCESS,
+//		Msg:     common.ResCodeDict[common.SUCCESS],
+//		Payload: string(bytes)}
+//	return common.RespondSuccess(resSuc)
+//}
 
 //GetAllApproval ...
 func (sah *ApprovalHanler) GetAllApproval(stub shim.ChaincodeStubInterface, args []string) pb.Response {
@@ -344,5 +466,27 @@ func (sah *ApprovalHanler) updateProposal(stub shim.ChaincodeStubInterface, appr
 			new(ProposalHanler).UpdateProposal(stub, []string{string(bytes)})
 		}
 	}
+	return nil
+}
+
+// checkApproverStatus func to check whether the SuperAdmin is active or inactive
+func (sah *ApprovalHanler) checkApproverStatus(stub shim.ChaincodeStubInterface, approverID string) error {
+	// Get approver by approval.ApproverID
+	superAdminStr, err := new(SuperAdminHanler).GetSuperAdminByID(stub, approverID)
+	if err != nil {
+		return fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine())
+	}
+
+	var superAdmin model.SuperAdmin
+	err = json.Unmarshal([]byte(*superAdminStr), &superAdmin)
+	if err != nil {
+		return fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())
+	}
+
+	// Check SuperAdmin's status
+	if superAdmin.Status != "A" && superAdmin.Status != "Active" {
+		return fmt.Errorf("%s %s", "This approver is not active", common.GetLine())
+	}
+	// If the SuperAdmin is active, return nil
 	return nil
 }

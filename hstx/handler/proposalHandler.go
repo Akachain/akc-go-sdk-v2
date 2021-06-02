@@ -20,10 +20,6 @@ type ProposalHanler struct{}
 
 // CreateProposal ...
 func (sah *ProposalHanler) CreateProposal(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	util.CheckChaincodeFunctionCallWellFormedness(args, 1)
-
-	common.Logger.Infof("Create Proposal: %+v\n", args)
-
 	proposal := new(model.Proposal)
 	err := json.Unmarshal([]byte(args[0]), proposal)
 	if err != nil {
@@ -33,35 +29,88 @@ func (sah *ProposalHanler) CreateProposal(stub shim.ChaincodeStubInterface, args
 			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
 		})
 	}
+	common.Logger.Debugf("Input-data sent to CreateProposal func: %+v\n", proposal)
 
-	proposal.ProposalID = stub.GetTxID()
+	proposal.ProposalID = util.GenerateDocumentID(stub)
 	proposal.Status = "Pending"
+
+	timestamp, err := stub.GetTxTimestamp()
+	if err != nil {
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR4,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine()),
+		})
+	}
+	proposal.CreatedAt = time.Unix(timestamp.Seconds, 0).Format(time.RFC3339)
+	proposal.UpdatedAt = proposal.CreatedAt
 
 	common.Logger.Infof("Create Proposal: %+v\n", proposal)
 	err = util.CreateData(stub, model.ProposalTable, []string{proposal.ProposalID}, &proposal)
-	if err != nil {
-		resErr := common.ResponseError{
-			ResCode: common.ERR5,
-			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR5], err.Error(), common.GetLine()),
-		}
-		return common.RespondError(resErr)
-	}
-
-	bytes, err := json.Marshal(proposal)
-	if err != nil {
-		// Return error: can't mashal json
+	if err != nil { // Return error: Fail to insert data
 		return common.RespondError(common.ResponseError{
 			ResCode: common.ERR5,
 			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR5], err.Error(), common.GetLine()),
 		})
 	}
 
+	bytes, err := json.Marshal(proposal)
+	if err != nil { // Return error: Can't marshal json
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR3,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
+		})
+	}
 	resSuc := common.ResponseSuccess{
 		ResCode: common.SUCCESS,
 		Msg:     common.ResCodeDict[common.SUCCESS],
 		Payload: string(bytes)}
 	return common.RespondSuccess(resSuc)
 }
+
+// CreateProposal ...
+//func (sah *ProposalHanler) CreateProposal(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+//	util.CheckChaincodeFunctionCallWellFormedness(args, 1)
+//
+//	common.Logger.Infof("Create Proposal: %+v\n", args)
+//
+//	proposal := new(model.Proposal)
+//	err := json.Unmarshal([]byte(args[0]), proposal)
+//	if err != nil {
+//		// Return error: can't unmashal json
+//		return common.RespondError(common.ResponseError{
+//			ResCode: common.ERR3,
+//			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
+//		})
+//	}
+//
+//	proposal.ProposalID = stub.GetTxID()
+//	proposal.Status = "Pending"
+//
+//	common.Logger.Infof("Create Proposal: %+v\n", proposal)
+//	err = util.CreateData(stub, model.ProposalTable, []string{proposal.ProposalID}, &proposal)
+//	if err != nil {
+//		resErr := common.ResponseError{
+//			ResCode: common.ERR5,
+//			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR5], err.Error(), common.GetLine()),
+//		}
+//		return common.RespondError(resErr)
+//	}
+//
+//	bytes, err := json.Marshal(proposal)
+//	if err != nil {
+//		// Return error: can't mashal json
+//		return common.RespondError(common.ResponseError{
+//			ResCode: common.ERR5,
+//			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR5], err.Error(), common.GetLine()),
+//		})
+//	}
+//
+//	resSuc := common.ResponseSuccess{
+//		ResCode: common.SUCCESS,
+//		Msg:     common.ResCodeDict[common.SUCCESS],
+//		Payload: string(bytes)}
+//	return common.RespondSuccess(resSuc)
+//}
 
 //GetAllProposal ...
 func (sah *ProposalHanler) GetAllProposal(stub shim.ChaincodeStubInterface, args []string) pb.Response {
@@ -103,14 +152,6 @@ func (sah *ProposalHanler) GetProposalByID(stub shim.ChaincodeStubInterface, pro
 // GetPendingProposalBySuperAdminID ...
 func (sah *ProposalHanler) GetPendingProposalBySuperAdminID(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	superAdminID := args[0]
-	//err := json.Unmarshal([]byte(args[0]), superAdminID)
-	//if err != nil {
-	//	// Return error: can't unmashal json
-	//	return common.RespondError(common.ResponseError{
-	//		ResCode: common.ERR3,
-	//		Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
-	//	})
-	//}
 	common.Logger.Debugf("Input-data sent to GetPendingProposalBySuperAdminID func: %+v\n", superAdminID)
 
 	var proposalList []model.Proposal
@@ -184,10 +225,8 @@ func (sah *ProposalHanler) GetPendingProposalBySuperAdminID(stub shim.ChaincodeS
 
 //UpdateProposal ...
 func (sah *ProposalHanler) UpdateProposal(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	util.CheckChaincodeFunctionCallWellFormedness(args, 1)
-
-	tmpProposal := new(model.Proposal)
-	err := json.Unmarshal([]byte(args[0]), tmpProposal)
+	newProposal := new(model.Proposal)
+	err := json.Unmarshal([]byte(args[0]), newProposal)
 	if err != nil {
 		// Return error: can't unmashal json
 		return common.RespondError(common.ResponseError{
@@ -195,56 +234,59 @@ func (sah *ProposalHanler) UpdateProposal(stub shim.ChaincodeStubInterface, args
 			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
 		})
 	}
+	common.Logger.Debugf("Input-data sent to UpdateProposal func: %+v\n", newProposal)
 
-	if len(tmpProposal.ProposalID) == 0 {
-		resErr := common.ResponseError{
-			ResCode: common.ERR13,
-			Msg:     fmt.Sprintf("%s %s", common.ResCodeDict[common.ERR13], err.Error()),
-		}
-		return common.RespondError(resErr)
+	if len(newProposal.ProposalID) == 0 {
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR3,
+			Msg:     fmt.Sprintf("%s %s", "This ApprovalID can't be empty", err.Error(), common.GetLine()),
+		})
 	}
 
 	//get proposal information
-	rawProposal, err := util.GetDataById(stub, tmpProposal.ProposalID, model.ProposalTable)
+	rawProposal, err := util.GetDataById(stub, newProposal.ProposalID, model.ProposalTable)
 	if err != nil {
-		resErr := common.ResponseError{
+		return common.RespondError(common.ResponseError{
 			ResCode: common.ERR4,
-			Msg:     fmt.Sprintf("%s %s", common.ResCodeDict[common.ERR4], err.Error()),
-		}
-		return common.RespondError(resErr)
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine()),
+		})
 	}
 
 	proposal := new(model.Proposal)
 	mapstructure.Decode(rawProposal, proposal)
 
-	tmpProposalVal := reflect.ValueOf(tmpProposal).Elem()
-	proposalVal := reflect.ValueOf(proposal).Elem()
-	for i := 0; i < tmpProposalVal.NumField(); i++ {
-		fieldName := tmpProposalVal.Type().Field(i).Name
-		if len(tmpProposalVal.Field(i).String()) > 0 {
-			field := proposalVal.FieldByName(fieldName)
+	// Filter fields needed to update
+	newProposalValue := reflect.ValueOf(newProposal).Elem()
+	proposalValue := reflect.ValueOf(proposal).Elem()
+	for i := 0; i < newProposalValue.NumField(); i++ {
+		fieldName := newProposalValue.Type().Field(i).Name
+		if len(newProposalValue.Field(i).String()) > 0 {
+			field := proposalValue.FieldByName(fieldName)
 			if field.CanSet() {
-				field.SetString(tmpProposalVal.Field(i).String())
+				fieldType := newProposalValue.Type().Field(i).Type
+				if strings.Compare("string", fieldType.String()) == 0 {
+					field.SetString(newProposalValue.Field(i).String())
+				}
+				if strings.Compare("int", fieldType.String()) == 0 {
+					field.SetInt(newProposalValue.Field(i).Int())
+				}
 			}
 		}
 	}
 
 	err = util.ChangeInfo(stub, model.ProposalTable, []string{proposal.ProposalID}, proposal)
-	if err != nil {
-		//Overwrite fail
-		resErr := common.ResponseError{
-			ResCode: common.ERR5,
-			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR5], err.Error(), common.GetLine()),
-		}
-		return common.RespondError(resErr)
-	}
-
-	bytes, err := json.Marshal(proposal)
-	if err != nil {
-		// Return error: can't mashal json
+	if err != nil { // Return error: Fail to Update data
 		return common.RespondError(common.ResponseError{
 			ResCode: common.ERR5,
 			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR5], err.Error(), common.GetLine()),
+		})
+	}
+
+	bytes, err := json.Marshal(proposal)
+	if err != nil { // Return error: Can't marshal json
+		return common.RespondError(common.ResponseError{
+			ResCode: common.ERR3,
+			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
 		})
 	}
 
@@ -255,17 +297,82 @@ func (sah *ProposalHanler) UpdateProposal(stub shim.ChaincodeStubInterface, args
 	return common.RespondSuccess(resSuc)
 }
 
+//UpdateProposal ...
+//func (sah *ProposalHanler) UpdateProposal(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+//	util.CheckChaincodeFunctionCallWellFormedness(args, 1)
+//
+//	tmpProposal := new(model.Proposal)
+//	err := json.Unmarshal([]byte(args[0]), tmpProposal)
+//	if err != nil {
+//		// Return error: can't unmashal json
+//		return common.RespondError(common.ResponseError{
+//			ResCode: common.ERR3,
+//			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
+//		})
+//	}
+//
+//	if len(tmpProposal.ProposalID) == 0 {
+//		resErr := common.ResponseError{
+//			ResCode: common.ERR13,
+//			Msg:     fmt.Sprintf("%s %s", common.ResCodeDict[common.ERR13], err.Error()),
+//		}
+//		return common.RespondError(resErr)
+//	}
+//
+//	//get proposal information
+//	rawProposal, err := util.GetDataById(stub, tmpProposal.ProposalID, model.ProposalTable)
+//	if err != nil {
+//		resErr := common.ResponseError{
+//			ResCode: common.ERR4,
+//			Msg:     fmt.Sprintf("%s %s", common.ResCodeDict[common.ERR4], err.Error()),
+//		}
+//		return common.RespondError(resErr)
+//	}
+//
+//	proposal := new(model.Proposal)
+//	mapstructure.Decode(rawProposal, proposal)
+//
+//	tmpProposalVal := reflect.ValueOf(tmpProposal).Elem()
+//	proposalVal := reflect.ValueOf(proposal).Elem()
+//	for i := 0; i < tmpProposalVal.NumField(); i++ {
+//		fieldName := tmpProposalVal.Type().Field(i).Name
+//		if len(tmpProposalVal.Field(i).String()) > 0 {
+//			field := proposalVal.FieldByName(fieldName)
+//			if field.CanSet() {
+//				field.SetString(tmpProposalVal.Field(i).String())
+//			}
+//		}
+//	}
+//
+//	err = util.ChangeInfo(stub, model.ProposalTable, []string{proposal.ProposalID}, proposal)
+//	if err != nil {
+//		//Overwrite fail
+//		resErr := common.ResponseError{
+//			ResCode: common.ERR5,
+//			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR5], err.Error(), common.GetLine()),
+//		}
+//		return common.RespondError(resErr)
+//	}
+//
+//	bytes, err := json.Marshal(proposal)
+//	if err != nil {
+//		// Return error: can't mashal json
+//		return common.RespondError(common.ResponseError{
+//			ResCode: common.ERR5,
+//			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR5], err.Error(), common.GetLine()),
+//		})
+//	}
+//
+//	resSuc := common.ResponseSuccess{
+//		ResCode: common.SUCCESS,
+//		Msg:     common.ResCodeDict[common.SUCCESS],
+//		Payload: string(bytes)}
+//	return common.RespondSuccess(resSuc)
+//}
+
 //CommitProposal ...
 func (sah *ProposalHanler) CommitProposal(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	proposalID := args[0]
-	//err := json.Unmarshal([]byte(args[0]), proposalID)
-	//if err != nil {
-	//	// Return error: can't unmashal json
-	//	return common.RespondError(common.ResponseError{
-	//		ResCode: common.ERR3,
-	//		Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
-	//	})
-	//}
 	common.Logger.Debugf("Input-data sent to CommitProposal func: %+v\n", proposalID)
 
 	proposalStr, err := sah.GetProposalByID(stub, proposalID)

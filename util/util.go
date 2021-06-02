@@ -20,13 +20,16 @@
 package util
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/Akachain/akc-go-sdk-v2/common"
+	"github.com/hyperledger/fabric-chaincode-go/pkg/cid"
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"log"
 	"reflect" // This is only used in InterfaceIsNil
+	"strings"
 )
 
 // Taken from https://stackoverflow.com/questions/13901819/quick-way-to-detect-empty-values-via-reflection-in-go
@@ -326,4 +329,37 @@ func GetByTwoColumns(stub shim.ChaincodeStubInterface, table string, column1 str
 		return nil, err
 	}
 	return resultsIterator, nil
+}
+
+// GenerateDocumentID func to generate ID
+func GenerateDocumentID(stub shim.ChaincodeStubInterface) string {
+	txID := stub.GetTxID()
+	sum := sha256.Sum256([]byte(txID))
+
+	return fmt.Sprintf("%x", sum[0:19])
+}
+
+// GetAttributeValue func to get a attribute saved in current user's certificate
+func GetAttributeValue(stub shim.ChaincodeStubInterface, attrName string) (*string, error) {
+	val, ok, err := cid.GetAttributeValue(stub, attrName)
+	if err != nil {
+		return nil, fmt.Errorf("Can't get attribute '%s' in the Certificate. Cause: %s %s", attrName, err.Error(), common.GetLine())
+	}
+	if !ok {
+		return nil, fmt.Errorf("Can't get attribute '%s' in the Certificate. Cause: %s", attrName, common.GetLine())
+	}
+	return &val, nil
+}
+
+// IsSuperAdmin func to check role Super Admin of caller. Return nil if true
+func IsSuperAdmin(stub shim.ChaincodeStubInterface) error {
+	role, err := GetAttributeValue(stub, "hstx.role")
+	if err != nil {
+		return err
+	}
+
+	if strings.Compare("SuperAdmin", *role) != 0 {
+		return fmt.Errorf("This certificate doesn't contain role SuperAdmin. Cause: %s", common.GetLine())
+	}
+	return nil
 }
