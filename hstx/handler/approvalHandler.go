@@ -472,13 +472,15 @@ func (sah *ApprovalHanler) updateProposal(stub shim.ChaincodeStubInterface, appr
 // checkApproverStatus func to check whether the SuperAdmin is active or inactive
 func (sah *ApprovalHanler) checkApproverStatus(stub shim.ChaincodeStubInterface, approverID string) error {
 	// Get approver by approval.ApproverID
-	superAdminStr, err := new(SuperAdminHanler).GetSuperAdminByID(stub, approverID)
-	if err != nil {
-		return fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine())
-	}
+	superAdminStr := new(SuperAdminHanler).GetSuperAdminByID(stub, []string{approverID})
+	//if err != nil {
+	//	return fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine())
+	//}
+
+	sAdmin := superAdminStr.Payload
 
 	var superAdmin model.SuperAdmin
-	err = json.Unmarshal([]byte(*superAdminStr), &superAdmin)
+	err := json.Unmarshal([]byte(sAdmin), &superAdmin)
 	if err != nil {
 		return fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())
 	}

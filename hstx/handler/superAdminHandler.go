@@ -72,37 +72,14 @@ func (sah *SuperAdminHanler) GetAllSuperAdmin(stub shim.ChaincodeStubInterface, 
 	return common.RespondSuccess(resSuc)
 }
 
-// GetSuperAdminByID ...
-func (sah *SuperAdminHanler) GetSuperAdminByID(stub shim.ChaincodeStubInterface, superAdminID string) (result *string, err error) {
-	common.Logger.Debugf("Input-data sent to GetSuperAdminByID func: %+v\n", superAdminID)
+//GetSuperAdminByID ...
+func (sah *SuperAdminHanler) GetSuperAdminByID(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	util.CheckChaincodeFunctionCallWellFormedness(args, 1)
 
-	rawSuperAdmin, err := util.GetDataById(stub, superAdminID, model.SuperAdminTable)
-	if err != nil {
-		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine())
-	}
-
-	superAdmin := new(model.SuperAdmin)
-	mapstructure.Decode(rawSuperAdmin, superAdmin)
-
-	bytes, err := json.Marshal(superAdmin)
-	if err != nil { // Return error: Can't marshal json
-		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())
-	}
-	temp := ""
-	result = &temp
-	*result = string(bytes)
-
-	return result, nil
+	superAdminID := args[0]
+	res := util.GetDataByIdWithResponse(stub, superAdminID, new(model.SuperAdmin), model.SuperAdminTable)
+	return res
 }
-
-// GetSuperAdminByID ...
-//func (sah *SuperAdminHanler) GetSuperAdminByID(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-//	util.CheckChaincodeFunctionCallWellFormedness(args, 1)
-//
-//	superAdminID := args[0]
-//	res := util.GetDataByIdWithResponse(stub, superAdminID, new(model.SuperAdmin), model.SuperAdminTable)
-//	return res
-//}
 
 //UpdateSuperAdmin ...
 func (sah *SuperAdminHanler) UpdateSuperAdmin(stub shim.ChaincodeStubInterface, args []string) pb.Response {
