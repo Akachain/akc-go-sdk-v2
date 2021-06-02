@@ -70,6 +70,7 @@ func GetDataById(stub shim.ChaincodeStubInterface, ID string, DocPrefix string) 
 	var dataStruct interface{}
 
 	rowWasFound, err := GetTableRow(stub, DocPrefix, []string{ID}, &dataStruct, FAIL_IF_MISSING)
+	common.Logger.Errorf("Error in GetDataById function: %s", err.Error())
 
 	if err != nil {
 		return nil, err

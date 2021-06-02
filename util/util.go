@@ -127,6 +127,7 @@ func GetTableRow(
 	failure_option GetTableRow_FailureOption,
 ) (rowWasFound bool, err error) {
 	_, rowWasFound, err = getTableRowAndCompositeKey(stub, table_name, row_keys, row_value, failure_option)
+	common.Logger.Errorf("Error in GetTableRow function: %s", err.Error())
 	return
 }
 

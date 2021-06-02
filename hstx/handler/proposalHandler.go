@@ -139,8 +139,6 @@ func (sah *ProposalHanler) GetProposalByID(stub shim.ChaincodeStubInterface, pro
 	proposal := new(model.Proposal)
 	mapstructure.Decode(rawProposal, proposal)
 
-	common.Logger.Debugf("Got Proposal in function GetProposalByID: %+v\n", proposal)
-
 	bytes, err := json.Marshal(proposal)
 	if err != nil { // Return error: Can't marshal json
 		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())
@@ -148,8 +146,6 @@ func (sah *ProposalHanler) GetProposalByID(stub shim.ChaincodeStubInterface, pro
 	temp := ""
 	result = &temp
 	*result = string(bytes)
-
-	common.Logger.Debugf("Data send back to CommitProposal function: %s\n", result)
 
 	return result, nil
 }
@@ -387,7 +383,6 @@ func (sah *ProposalHanler) CommitProposal(stub shim.ChaincodeStubInterface, args
 			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine()),
 		})
 	}
-	common.Logger.Debugf("Prposal info: %+v\n", proposalStr)
 
 	var proposal model.Proposal
 	err = json.Unmarshal([]byte(*proposalStr), &proposal)
@@ -423,7 +418,6 @@ func (sah *ProposalHanler) CommitProposal(stub shim.ChaincodeStubInterface, args
 	updatedTime := time.Unix(timestamp.Seconds, 0)
 	proposal.UpdatedAt = updatedTime.String()
 
-	common.Logger.Debugf("Proposal info to update: %+v\n", proposal)
 	err = util.ChangeInfo(stub, model.ProposalTable, []string{proposal.ProposalID}, proposal)
 	if err != nil { // Return error: Fail to Update data
 		return common.RespondError(common.ResponseError{
