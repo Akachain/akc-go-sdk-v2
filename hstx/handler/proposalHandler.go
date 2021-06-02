@@ -139,6 +139,8 @@ func (sah *ProposalHanler) GetProposalByID(stub shim.ChaincodeStubInterface, pro
 	proposal := new(model.Proposal)
 	mapstructure.Decode(rawProposal, proposal)
 
+	common.Logger.Debugf("Got Proposal in function GetProposalByID: %+v\n", proposal)
+
 	bytes, err := json.Marshal(proposal)
 	if err != nil { // Return error: Can't marshal json
 		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())
@@ -146,6 +148,8 @@ func (sah *ProposalHanler) GetProposalByID(stub shim.ChaincodeStubInterface, pro
 	temp := ""
 	result = &temp
 	*result = string(bytes)
+
+	common.Logger.Debugf("Data send back to CommitProposal function: %s\n", result)
 
 	return result, nil
 }
