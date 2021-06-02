@@ -28,16 +28,16 @@ type ApprovalHanler struct{}
 // CreateApproval ...
 func (sah *ApprovalHanler) CreateApproval(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	// Check role: SuperAdmin
-	err := util.IsSuperAdmin(stub)
-	if err != nil {
-		return common.RespondError(common.ResponseError{
-			ResCode: common.ERR3,
-			Msg:     fmt.Sprintf("%s %s %s", err.Error(), common.GetLine()),
-		})
-	}
+	//err := util.IsSuperAdmin(stub)
+	//if err != nil {
+	//	return common.RespondError(common.ResponseError{
+	//		ResCode: common.ERR3,
+	//		Msg:     fmt.Sprintf("%s %s %s", err.Error(), common.GetLine()),
+	//	})
+	//}
 
 	approval := new(model.Approval)
-	err = json.Unmarshal([]byte(args[0]), approval)
+	err := json.Unmarshal([]byte(args[0]), approval)
 	if err != nil {
 		// Return error: can't unmashal json
 		return common.RespondError(common.ResponseError{
