@@ -26,11 +26,11 @@ import (
 	"github.com/hyperledger/fabric-chaincode-go/shimtest"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb"
+	"github.com/spf13/viper"
 	"strings"
 	"unicode/utf8"
 
 	logging "github.com/op/go-logging"
-	viper "github.com/spf13/viper"
 )
 
 const (
@@ -53,9 +53,9 @@ type MockStubExtend struct {
 // that did not implement anything.
 func (stub *MockStubExtend) GetQueryResult(query string) (shim.StateQueryIteratorInterface, error) {
 	// Query data from couchDB
-	raw, error := stub.DbHandler.QueryDocument(query)
-	if error != nil {
-		return nil, error
+	raw, err := stub.DbHandler.QueryDocument(query)
+	if err != nil {
+		return nil, err
 	}
 	return FromResultsIterator(raw)
 }

@@ -21,6 +21,7 @@ package contract
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/Akachain/akc-go-sdk-v2/mock"
 	"github.com/hyperledger/fabric-chaincode-go/shimtest"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
@@ -36,11 +37,15 @@ func setupMock() *mock.MockStubExtend {
 	stub := mock.NewMockStubExtend(shimtest.NewMockStub(chaincodeName, chaincode), chaincode, ".")
 
 	// Create a new database, Drop old database
-	db, _ := mock.NewCouchDBHandler(true, chaincodeName)
+	db, err := mock.NewCouchDBHandler(true, chaincodeName)
+	if err != nil {
+		fmt.Printf("NewCouchDBHandler failed with err (%s)", err.Error())
+		return nil
+	}
 	stub.SetCouchDBConfiguration(db)
 
 	// Process indexes
-	err := db.ProcessIndexesForChaincodeDeploy("indexSampleDoc.json", "./META-INF/statedb/couchdb/indexes/indexSampleDoc.json")
+	err = db.ProcessIndexesForChaincodeDeploy("indexSampleDoc.json", "./META-INF/statedb/couchdb/indexes/indexSampleDoc.json")
 	if err != nil {
 		return nil
 	}

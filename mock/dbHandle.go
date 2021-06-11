@@ -20,8 +20,9 @@
 package mock
 
 import (
+	"archive/tar"
+	"bytes"
 	"encoding/json"
-	"github.com/hyperledger/fabric/common/ledger/testutil"
 	"github.com/hyperledger/fabric/common/metrics/disabled"
 	"github.com/hyperledger/fabric/core/common/ccprovider"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb"
@@ -29,6 +30,7 @@ import (
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/version"
 	"github.com/hyperledger/fabric/core/ledger/util/couchdb"
 	"github.com/spf13/viper"
+	"strings"
 
 	"io/ioutil"
 	"time"
@@ -38,6 +40,11 @@ const (
 	// The couchDB test will have this name: DefaultChannelName_chaincodeName
 	DefaultChannelName = "testchannel" // Fabric channel
 )
+
+// TarFileEntry is a structure for adding test index files to an tar
+type TarFileEntry struct {
+	Name, Body string
+}
 
 // CouchDBHandler holds 1 parameter:
 // dbEngine: a VersionedDB object that is used by the chaincode to query.
@@ -103,7 +110,15 @@ func cleanUp(ccName string) error {
 	if er != nil {
 		return er
 	}
+	allDBName, err := ins.RetrieveApplicationDBNames()
+	if err != nil {
+		return er
+	}
+	strAllDBName := strings.Join(allDBName, ",")
 	dbName := couchdb.ConstructNamespaceDBName(DefaultChannelName, ccName)
+	if !strings.Contains(strAllDBName, dbName) {
+		return nil
+	}
 	db := couchdb.CouchDatabase{CouchInstance: ins, DBName: dbName}
 	_, er = db.DropDatabase()
 	return er
@@ -119,8 +134,8 @@ func (handler *CouchDBHandler) ProcessIndexesForChaincodeDeploy(indexFileName st
 	}
 
 	// Process index
-	dbArtifactsTarBytes := testutil.CreateTarBytesForTest(
-		[]*testutil.TarFileEntry{
+	dbArtifactsTarBytes := createTarBytesForTest(
+		[]*TarFileEntry{
 			{Name: "META-INF/statedb/couchdb/indexes/" + indexFileName, Body: string(indexContent)},
 		},
 	)
@@ -200,3 +215,29 @@ func (handler *CouchDBHandler) QueryDocumentByRange(startKey, endKey string) (st
 //	rs, er := handler.dbEngine.GetStateRangeScanIteratorWithMetadata(handler.chaincodeName, startKey, endKey, queryOptions)
 //	return rs, er
 //}
+
+// createTarBytesForTest creates a tar byte array for unit testing
+func createTarBytesForTest(testFiles []*TarFileEntry) []byte {
+	//Create a buffer for the tar file
+	buffer := new(bytes.Buffer)
+	tarWriter := tar.NewWriter(buffer)
+
+	for _, file := range testFiles {
+		tarHeader := &tar.Header{
+			Name: file.Name,
+			Mode: 0600,
+			Size: int64(len(file.Body)),
+		}
+		err := tarWriter.WriteHeader(tarHeader)
+		if err != nil {
+			return nil
+		}
+		_, err = tarWriter.Write([]byte(file.Body))
+		if err != nil {
+			return nil
+		}
+	}
+	// Make sure to check the error on Close.
+	tarWriter.Close()
+	return buffer.Bytes()
+}
