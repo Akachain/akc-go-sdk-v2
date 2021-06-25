@@ -146,62 +146,6 @@ func (sah *ApprovalHanler) CreateApproval(stub shim.ChaincodeStubInterface, args
 	return common.RespondSuccess(resSuc)
 }
 
-// CreateApproval ...
-//func (sah *ApprovalHanler) CreateApproval(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-//	util.CheckChaincodeFunctionCallWellFormedness(args, 3)
-//
-//	approval := new(model.Approval)
-//	err := json.Unmarshal([]byte(args[0]), approval)
-//	if err != nil {
-//		// Return error: can't unmashal json
-//		return common.RespondError(common.ResponseError{
-//			ResCode: common.ERR3,
-//			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
-//		})
-//	}
-//
-//	approval.ApprovalID = stub.GetTxID()
-//
-//	err = sah.verifySignature(stub, approval.ApproverID, approval.Signature, approval.Message)
-//	if err != nil {
-//		// Return error: can't unmashal json
-//		return common.RespondError(common.ResponseError{
-//			ResCode: common.ERR3,
-//			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine()),
-//		})
-//	}
-//
-//	approval.Status = "Verified"
-//
-//	common.Logger.Infof("Create Approval: %+v\n", approval)
-//	err = util.CreateData(stub, model.ApprovalTable, []string{approval.ApprovalID}, &approval)
-//	if err != nil {
-//		resErr := common.ResponseError{
-//			ResCode: common.ERR5,
-//			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR5], err.Error(), common.GetLine()),
-//		}
-//		return common.RespondError(resErr)
-//	}
-//
-//	// Update proposal if necessary
-//	sah.updateProposal(stub, approval)
-//
-//	bytes, err := json.Marshal(approval)
-//	if err != nil {
-//		// Return error: can't mashal json
-//		return common.RespondError(common.ResponseError{
-//			ResCode: common.ERR5,
-//			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR5], err.Error(), common.GetLine()),
-//		})
-//	}
-//
-//	resSuc := common.ResponseSuccess{
-//		ResCode: common.SUCCESS,
-//		Msg:     common.ResCodeDict[common.SUCCESS],
-//		Payload: string(bytes)}
-//	return common.RespondSuccess(resSuc)
-//}
-
 //GetAllApproval ...
 func (sah *ApprovalHanler) GetAllApproval(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	res, err := getApprovalData(stub, 5)

@@ -9,4 +9,5 @@ type SuperAdmin struct {
 	Name         string `json:"Name"`
 	PublicKey    string `json:"PublicKey"` // format: pem
 	Status       string `json:"Status"`
+	OtpSecret    string `json:"OtpSecret"`
 }
