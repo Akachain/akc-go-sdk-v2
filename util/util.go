@@ -78,7 +78,7 @@ func getTableRowAndCompositeKey(
 		return
 	}
 
-	//     fmt.Printf("getTableRowAndCompositeKey; table_name = \"%s\", composite_key (may contain unprintable chars) = \"%s\", row_value = %v, InterfaceIsNilOrIsZeroOfUnderlyingType(row_value) = %v\n", table_name, composite_key, row_value, InterfaceIsNilOrIsZeroOfUnderlyingType(row_value))
+	fmt.Printf("getTableRowAndCompositeKey; table_name = \"%s\", composite_key (may contain unprintable chars) = \"%s\", row_value = %v, InterfaceIsNilOrIsZeroOfUnderlyingType(row_value) = %v\n", table_name, composite_key, row_value, InterfaceIsNilOrIsZeroOfUnderlyingType(row_value))
 
 	var bytes []byte
 	bytes, err = stub.GetState(composite_key)

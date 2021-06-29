@@ -68,3 +68,18 @@ func TestSimpleData(t *testing.T) {
 	assert.Equal(t, key1, ad[0].Key1)
 	assert.Equal(t, val1, ad[0].Attribute1)
 }
+
+//func TestGetSuperAdminByID(t *testing.T) {
+//	stub := setupMock()
+//	superAdminID := "UD8wnJxVppgi/sFB_hSuFOanDtbFK0ebOpsCZJUiKF_aiT/zXW-t_d91/dSPTsK91lO-p9EAbQ4bVeJ7bt=5mY"
+//
+//	rs := mock.MockInvokeTransaction(t, stub, [][]byte{[]byte("GetSuperAdminByID"), []byte(superAdminID)})
+//
+//	compositeKey, _ := stub.CreateCompositeKey(model.SuperAdminTable, []string{rs})
+//	state, _ := stub.GetState(compositeKey)
+//	var sa model.SuperAdmin
+//	json.Unmarshal([]byte(state), &sa)
+//
+//	assert.Equal(t, "admin4", sa.Name)
+//	assert.Equal(t, superAdminID, sa.SuperAdminID)
+//}
