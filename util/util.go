@@ -71,18 +71,16 @@ func getTableRowAndCompositeKey(
 
 	// Form the composite key that will index this table row in the ledger state key/value store.
 	composite_key, err = stub.CreateCompositeKey(table_name, row_keys)
-	common.Logger.Debugf("Composite key in function getTableRowAndCompositeKey: %v", composite_key)
 	if err != nil {
 		composite_key = ""
 		err = fmt.Errorf("GetTableRow failed because stub.CreateCompositeKey failed with error %v", err)
 		return
 	}
 
-	fmt.Printf("getTableRowAndCompositeKey; table_name = \"%s\", composite_key (may contain unprintable chars) = \"%s\", row_value = %v, InterfaceIsNilOrIsZeroOfUnderlyingType(row_value) = %v\n", table_name, composite_key, row_value, InterfaceIsNilOrIsZeroOfUnderlyingType(row_value))
+	//fmt.Printf("getTableRowAndCompositeKey; table_name = \"%s\", composite_key (may contain unprintable chars) = \"%s\", row_value = %v, InterfaceIsNilOrIsZeroOfUnderlyingType(row_value) = %v\n", table_name, composite_key, row_value, InterfaceIsNilOrIsZeroOfUnderlyingType(row_value))
 
 	var bytes []byte
 	bytes, err = stub.GetState(composite_key)
-	common.Logger.Debugf("Byte data in function getTableRowAndCompositeKey: %v", bytes)
 	if err != nil {
 		// Regardless of failure option, we will be returning due to this error.
 		if failure_option == FAIL_IF_MISSING {

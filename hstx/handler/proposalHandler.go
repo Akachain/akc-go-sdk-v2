@@ -86,13 +86,38 @@ func (sah *ProposalHanler) GetAllProposal(stub shim.ChaincodeStubInterface, args
 func (sah *ProposalHanler) GetProposalByID(stub shim.ChaincodeStubInterface, proposalID string) (result *string, err error) {
 	common.Logger.Debugf("Input-data sent to GetProposalByID func: %+v\n", proposalID)
 
-	rawProposal, err := util.GetDataById(stub, proposalID, model.ProposalTable)
-	if err != nil {
-		return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine())
-	}
+	//rawProposal, err := util.GetDataById(stub, proposalID, model.ProposalTable)
+	//if err != nil {
+	//	return nil, fmt.Errorf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine())
+	//}
 
-	proposal := new(model.Proposal)
-	mapstructure.Decode(rawProposal, proposal)
+	//proposal := new(model.Proposal)
+	//mapstructure.Decode(rawProposal, proposal)
+
+	var proposal = new(model.Proposal)
+	var queryString = fmt.Sprintf(`
+		{ "selector": 
+			{
+				"_id": "\u0000Proposal\u0000%s\u0000"		
+			}
+		}`, proposalID)
+	common.Logger.Debugf("Get Query String %s", queryString)
+	queryResult, err := stub.GetQueryResult(queryString)
+	if err != nil {
+		common.Logger.Errorf("Get Query String Error: %s", err)
+	}
+	common.Logger.Debug("Finish Get query")
+
+	for queryResult.HasNext() {
+		queryResponse, err := queryResult.Next()
+		if err != nil {
+			common.Logger.Errorf("Query Result Error: %s", err)
+		}
+		err = json.Unmarshal(queryResponse.Value, proposal)
+		if err != nil {
+			continue
+		}
+	}
 
 	bytes, err := json.Marshal(proposal)
 	if err != nil { // Return error: Can't marshal json
