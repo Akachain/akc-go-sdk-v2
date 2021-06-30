@@ -10,7 +10,6 @@ import (
 	"github.com/Akachain/akc-go-sdk-v2/util"
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
-	"github.com/mitchellh/mapstructure"
 )
 
 // SuperAdminHanler ...
@@ -134,18 +133,43 @@ func (sah *SuperAdminHanler) UpdateSuperAdmin(stub shim.ChaincodeStubInterface, 
 		return common.RespondError(resErr)
 	}
 
-	//get superAdmin information
-	rawSuperAdmin, err := util.GetDataById(stub, tmpSuperAdmin.SuperAdminID, model.SuperAdminTable)
-	if err != nil {
-		resErr := common.ResponseError{
-			ResCode: common.ERR4,
-			Msg:     fmt.Sprintf("%s %s", common.ResCodeDict[common.ERR4], err.Error()),
-		}
-		return common.RespondError(resErr)
-	}
+	////get superAdmin information
+	//rawSuperAdmin, err := util.GetDataById(stub, tmpSuperAdmin.SuperAdminID, model.SuperAdminTable)
+	//if err != nil {
+	//	resErr := common.ResponseError{
+	//		ResCode: common.ERR4,
+	//		Msg:     fmt.Sprintf("%s %s", common.ResCodeDict[common.ERR4], err.Error()),
+	//	}
+	//	return common.RespondError(resErr)
+	//}
+	//
+	//superAdmin := new(model.SuperAdmin)
+	//mapstructure.Decode(rawSuperAdmin, superAdmin)
 
 	superAdmin := new(model.SuperAdmin)
-	mapstructure.Decode(rawSuperAdmin, superAdmin)
+	var queryString = fmt.Sprintf(`
+		{ "selector": 
+			{
+				"_id": "\u0000SuperAdmin\u0000%s\u0000"		
+			}
+		}`, tmpSuperAdmin.SuperAdminID)
+	common.Logger.Debugf("Get Query String %s", queryString)
+	queryResult, err := stub.GetQueryResult(queryString)
+	if err != nil {
+		common.Logger.Errorf("Get Query String Error: %s", err)
+	}
+	common.Logger.Debug("Finish Get query")
+
+	for queryResult.HasNext() {
+		queryResponse, err := queryResult.Next()
+		if err != nil {
+			common.Logger.Errorf("Query Result Error: %s", err)
+		}
+		err = json.Unmarshal(queryResponse.Value, superAdmin)
+		if err != nil {
+			continue
+		}
+	}
 
 	tmpSuperAdminVal := reflect.ValueOf(tmpSuperAdmin).Elem()
 	superAdminVal := reflect.ValueOf(superAdmin).Elem()

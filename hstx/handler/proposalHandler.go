@@ -12,7 +12,6 @@ import (
 	"github.com/Akachain/akc-go-sdk-v2/util"
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
-	"github.com/mitchellh/mapstructure"
 )
 
 // ProposalHanler ...
@@ -224,17 +223,42 @@ func (sah *ProposalHanler) UpdateProposal(stub shim.ChaincodeStubInterface, args
 		})
 	}
 
-	//get proposal information
-	rawProposal, err := util.GetDataById(stub, newProposal.ProposalID, model.ProposalTable)
-	if err != nil {
-		return common.RespondError(common.ResponseError{
-			ResCode: common.ERR4,
-			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine()),
-		})
-	}
+	////get proposal information
+	//rawProposal, err := util.GetDataById(stub, newProposal.ProposalID, model.ProposalTable)
+	//if err != nil {
+	//	return common.RespondError(common.ResponseError{
+	//		ResCode: common.ERR4,
+	//		Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine()),
+	//	})
+	//}
+	//
+	//proposal := new(model.Proposal)
+	//mapstructure.Decode(rawProposal, proposal)
 
 	proposal := new(model.Proposal)
-	mapstructure.Decode(rawProposal, proposal)
+	var queryString = fmt.Sprintf(`
+		{ "selector": 
+			{
+				"_id": "\u0000Proposal\u0000%s\u0000"		
+			}
+		}`, newProposal.ProposalID)
+	common.Logger.Debugf("Get Query String %s", queryString)
+	queryResult, err := stub.GetQueryResult(queryString)
+	if err != nil {
+		common.Logger.Errorf("Get Query String Error: %s", err)
+	}
+	common.Logger.Debug("Finish Get query")
+
+	for queryResult.HasNext() {
+		queryResponse, err := queryResult.Next()
+		if err != nil {
+			common.Logger.Errorf("Query Result Error: %s", err)
+		}
+		err = json.Unmarshal(queryResponse.Value, proposal)
+		if err != nil {
+			continue
+		}
+	}
 
 	// Filter fields needed to update
 	newProposalValue := reflect.ValueOf(newProposal).Elem()
