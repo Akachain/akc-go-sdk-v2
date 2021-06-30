@@ -21,7 +21,6 @@ package mock
 
 import (
 	"archive/tar"
-	"bytes"
 	"encoding/json"
 	"github.com/hyperledger/fabric/common/metrics/disabled"
 	"github.com/hyperledger/fabric/core/common/ccprovider"
@@ -30,6 +29,7 @@ import (
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/version"
 	"github.com/hyperledger/fabric/core/ledger/util/couchdb"
 	"github.com/spf13/viper"
+	"path/filepath"
 	"strings"
 
 	"io/ioutil"
@@ -126,26 +126,27 @@ func cleanUp(ccName string) error {
 
 // ProcessIndexesForChaincodeDeploy creates indexes for a database.
 // We will need the name of the json index fil and the relative path to this file
-func (handler *CouchDBHandler) ProcessIndexesForChaincodeDeploy(indexFileName string, path string) error {
-
+func (handler *CouchDBHandler) ProcessIndexesForChaincodeDeploy(path string) error {
 	indexContent, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
 	}
 
 	// Process index
-	dbArtifactsTarBytes := createTarBytesForTest(
-		[]*TarFileEntry{
-			{Name: "META-INF/statedb/couchdb/indexes/" + indexFileName, Body: string(indexContent)},
-		},
-	)
+	fileName := filepath.Base(path)
 
-	fileEntries, errExtract := ccprovider.ExtractFileEntries(dbArtifactsTarBytes, "couchdb")
-	if errExtract != nil {
-		return errExtract
-	}
+	tarHeader := new(tar.Header)
+	tarHeader.Name = fileName
+	tarHeader.Mode = 0600
+	tarHeader.Size = int64(len(indexContent))
 
-	return handler.dbEngine.ProcessIndexesForChaincodeDeploy(handler.chaincodeName, fileEntries["META-INF\\statedb\\couchdb\\indexes"])
+	fileEntries := make([]*ccprovider.TarFileEntry, 0)
+	fileEntries = append(fileEntries, &ccprovider.TarFileEntry{
+		FileHeader:  tarHeader,
+		FileContent: indexContent,
+	})
+
+	return handler.dbEngine.ProcessIndexesForChaincodeDeploy(handler.chaincodeName, fileEntries)
 }
 
 // SaveDocument stores a value in couchDB
@@ -215,29 +216,3 @@ func (handler *CouchDBHandler) QueryDocumentByRange(startKey, endKey string) (st
 //	rs, er := handler.dbEngine.GetStateRangeScanIteratorWithMetadata(handler.chaincodeName, startKey, endKey, queryOptions)
 //	return rs, er
 //}
-
-// createTarBytesForTest creates a tar byte array for unit testing
-func createTarBytesForTest(testFiles []*TarFileEntry) []byte {
-	//Create a buffer for the tar file
-	buffer := new(bytes.Buffer)
-	tarWriter := tar.NewWriter(buffer)
-
-	for _, file := range testFiles {
-		tarHeader := &tar.Header{
-			Name: file.Name,
-			Mode: 0600,
-			Size: int64(len(file.Body)),
-		}
-		err := tarWriter.WriteHeader(tarHeader)
-		if err != nil {
-			return nil
-		}
-		_, err = tarWriter.Write([]byte(file.Body))
-		if err != nil {
-			return nil
-		}
-	}
-	// Make sure to check the error on Close.
-	tarWriter.Close()
-	return buffer.Bytes()
-}

@@ -45,7 +45,7 @@ func setupMock() *mock.MockStubExtend {
 	stub.SetCouchDBConfiguration(db)
 
 	// Process indexes
-	err = db.ProcessIndexesForChaincodeDeploy("indexSampleDoc.json", "./META-INF/statedb/couchdb/indexes/indexSampleDoc.json")
+	err = db.ProcessIndexesForChaincodeDeploy("./META-INF/statedb/couchdb/indexes/indexSampleDoc.json")
 	if err != nil {
 		return nil
 	}
