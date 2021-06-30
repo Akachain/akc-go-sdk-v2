@@ -82,6 +82,7 @@ func getTableRowAndCompositeKey(
 
 	var bytes []byte
 	bytes, err = stub.GetState(composite_key)
+	common.Logger.Debugf("Byte data in function getTableRowAndCompositeKey: %v", bytes)
 	if err != nil {
 		// Regardless of failure option, we will be returning due to this error.
 		if failure_option == FAIL_IF_MISSING {
