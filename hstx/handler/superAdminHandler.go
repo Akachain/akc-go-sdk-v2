@@ -60,7 +60,7 @@ func (sah *SuperAdminHanler) CreateSuperAdmin(stub shim.ChaincodeStubInterface, 
 
 //GetAllSuperAdmin ...
 func (sah *SuperAdminHanler) GetAllSuperAdmin(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	res, err := getSuperAdminData(stub, 5)
+	res, err := getSuperAdminData(stub, 6)
 	if err != nil {
 		resErr := common.ResponseError{common.ERR3, fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())}
 		return common.RespondError(resErr)
@@ -76,10 +76,40 @@ func (sah *SuperAdminHanler) GetAllSuperAdmin(stub shim.ChaincodeStubInterface, 
 func (sah *SuperAdminHanler) GetSuperAdminByID(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	util.CheckChaincodeFunctionCallWellFormedness(args, 1)
 
+	var superAdmin = new(model.SuperAdmin)
 	superAdminID := args[0]
 	common.Logger.Debugf("Super Admin ID in GetSuperAdminByID function: %+v\n", superAdminID)
-	res := util.GetDataByIdWithResponse(stub, superAdminID, new(model.SuperAdmin), model.SuperAdminTable)
-	return res
+
+	//res := util.GetDataByIdWithResponse(stub, superAdminID, new(model.SuperAdmin), model.SuperAdminTable)
+
+	var queryString = fmt.Sprintf(`
+		{ "selector": 
+			{
+				"_id": \u0000SuperAdmin\u0000%s\u0000		
+			}
+		}`, superAdminID)
+	common.Logger.Debugf("Get Query String %s", queryString)
+	queryResult, err := stub.GetQueryResult(queryString)
+	if err != nil {
+		common.Logger.Errorf("Get Query String Error: %s", err)
+	}
+	common.Logger.Debug("Finish Get query")
+
+	for queryResult.HasNext() {
+		queryResponse, err := queryResult.Next()
+		if err != nil {
+			common.Logger.Errorf("Query Result Error: %s", err)
+		}
+		err = json.Unmarshal(queryResponse.Value, superAdmin)
+		if err != nil {
+			continue
+		}
+	}
+	result, _ := json.Marshal(superAdmin)
+	resSuc := common.ResponseSuccess{ResCode: common.SUCCESS, Msg: common.ResCodeDict[common.SUCCESS], Payload: string(result)}
+	return common.RespondSuccess(resSuc)
+
+	//return res
 }
 
 //UpdateSuperAdmin ...

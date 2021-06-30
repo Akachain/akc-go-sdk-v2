@@ -70,7 +70,7 @@ func (sah *ProposalHanler) CreateProposal(stub shim.ChaincodeStubInterface, args
 
 //GetAllProposal ...
 func (sah *ProposalHanler) GetAllProposal(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	res, err := getProposalData(stub, 5)
+	res, err := getProposalData(stub, 6)
 	if err != nil {
 		resErr := common.ResponseError{common.ERR3, fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())}
 		return common.RespondError(resErr)
