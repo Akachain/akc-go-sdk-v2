@@ -85,7 +85,7 @@ func (sah *SuperAdminHanler) GetSuperAdminByID(stub shim.ChaincodeStubInterface,
 	var queryString = fmt.Sprintf(`
 		{ "selector": 
 			{
-				"_id": \u0000SuperAdmin\u0000%s\u0000		
+				"_id": "\u0000SuperAdmin\u0000%s\u0000"		
 			}
 		}`, superAdminID)
 	common.Logger.Debugf("Get Query String %s", queryString)
