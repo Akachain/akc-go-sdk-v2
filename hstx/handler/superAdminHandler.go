@@ -80,6 +80,7 @@ func (sah *SuperAdminHanler) GetSuperAdminByID(stub shim.ChaincodeStubInterface,
 	common.Logger.Debugf("Super Admin ID in GetSuperAdminByID function: %+v\n", superAdminID)
 
 	//res := util.GetDataByIdWithResponse(stub, superAdminID, new(model.SuperAdmin), model.SuperAdminTable)
+	//return res
 
 	var queryString = fmt.Sprintf(`
 		{ "selector": 
@@ -107,8 +108,6 @@ func (sah *SuperAdminHanler) GetSuperAdminByID(stub shim.ChaincodeStubInterface,
 	result, _ := json.Marshal(superAdmin)
 	resSuc := common.ResponseSuccess{ResCode: common.SUCCESS, Msg: common.ResCodeDict[common.SUCCESS], Payload: string(result)}
 	return common.RespondSuccess(resSuc)
-
-	//return res
 }
 
 //UpdateSuperAdmin ...

@@ -25,6 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Akachain/akc-go-sdk-v2/common"
+	"github.com/Akachain/akc-go-sdk-v2/hstx/model"
 	"github.com/hyperledger/fabric-chaincode-go/pkg/cid"
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"log"
@@ -190,11 +191,45 @@ func InsertTableRow(
 		return
 	}
 
-	// Check for the row's presence and retrieve its value into old_row_value if specified
-	composite_key, rowWasFound, err := getTableRowAndCompositeKey(stub, table_name, row_keys, old_row_value, DONT_FAIL_IF_MISSING)
+	//// Check for the row's presence and retrieve its value into old_row_value if specified
+	//composite_key, rowWasFound, err := getTableRowAndCompositeKey(stub, table_name, row_keys, old_row_value, DONT_FAIL_IF_MISSING)
+	//if err != nil {
+	//	err = fmt.Errorf("InsertTableRow failed because getTableRowAndCompositeKey failed with error %v", err)
+	//	return
+	//}
+
+	// Form the composite key that will index this table row in the ledger state key/value store.
+	composite_key, err := stub.CreateCompositeKey(table_name, row_keys)
 	if err != nil {
-		err = fmt.Errorf("InsertTableRow failed because getTableRowAndCompositeKey failed with error %v", err)
+		composite_key = ""
+		err = fmt.Errorf("GetTableRow failed because stub.CreateCompositeKey failed with error %v", err)
 		return
+	}
+
+	superAdmin := new(model.SuperAdmin)
+	var queryString = fmt.Sprintf(`
+		{ "selector": 
+			{
+				"_id": "\u0000SuperAdmin\u0000%s\u0000"		
+			}
+		}`, row_keys[0])
+	common.Logger.Debugf("Get Query String %s", queryString)
+	queryResult, err := stub.GetQueryResult(queryString)
+	if err != nil {
+		common.Logger.Errorf("Get Query String Error: %s", err)
+	}
+	common.Logger.Debug("Finish Get query")
+
+	for queryResult.HasNext() {
+		queryResponse, err := queryResult.Next()
+		if err != nil {
+			common.Logger.Errorf("Query Result Error: %s", err)
+		}
+		err = json.Unmarshal(queryResponse.Value, superAdmin)
+		if err != nil {
+			continue
+		}
+		rowWasFound = true
 	}
 
 	// Process the failure_option

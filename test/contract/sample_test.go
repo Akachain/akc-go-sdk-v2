@@ -72,8 +72,9 @@ func TestSimpleData(t *testing.T) {
 //func TestGetSuperAdminByID(t *testing.T) {
 //	stub := setupMock()
 //	superAdminID := "UD8wnJxVppgi/sFB_hSuFOanDtbFK0ebOpsCZJUiKF_aiT/zXW-t_d91/dSPTsK91lO-p9EAbQ4bVeJ7bt=5mY"
+//	param, _ := json.Marshal(superAdminID)
 //
-//	rs := mock.MockInvokeTransaction(t, stub, [][]byte{[]byte("GetSuperAdminByID"), []byte(superAdminID)})
+//	rs := mock.MockInvokeTransaction(t, stub, [][]byte{[]byte("GetSuperAdminByID"), []byte(param)})
 //
 //	compositeKey, _ := stub.CreateCompositeKey(model.SuperAdminTable, []string{rs})
 //	state, _ := stub.GetState(compositeKey)
