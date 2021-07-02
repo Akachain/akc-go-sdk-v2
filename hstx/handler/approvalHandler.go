@@ -316,6 +316,7 @@ func (sah *ApprovalHanler) verifySignature(stub shim.ChaincodeStubInterface, app
 
 	rawPk, err := x509.ParsePKIXPublicKey(pkBlock.Bytes)
 	if err != nil {
+		common.Logger.Errorf("Error in ParsePKIXPublicKey function - verifySignature: %s", err)
 		return err
 	}
 
@@ -324,17 +325,20 @@ func (sah *ApprovalHanler) verifySignature(stub shim.ChaincodeStubInterface, app
 	// SIGNATURE
 	signaturebyte, err := base64.StdEncoding.DecodeString(signature)
 	if err != nil {
+		common.Logger.Errorf("Error in DecodeString signature function - verifySignature: %s", err)
 		return err
 	}
 
 	R, S, err := utils.UnmarshalECDSASignature(signaturebyte)
 	if err != nil {
+		common.Logger.Errorf("Error in UnmarshalECDSASignature function - verifySignature: %s", err)
 		return err
 	}
 
 	// DATA
 	dataByte, err := base64.StdEncoding.DecodeString(message)
 	if err != nil {
+		common.Logger.Errorf("Error in DecodeString message function - verifySignature: %s", err)
 		return err
 	}
 
