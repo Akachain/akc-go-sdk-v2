@@ -275,13 +275,37 @@ func (sah *ApprovalHanler) verifySignature(stub shim.ChaincodeStubInterface, app
 	}
 
 	//get superAdmin information
-	rawSuperAdmin, err := util.GetDataById(stub, approverID, model.SuperAdminTable)
-	if err != nil {
-		return err
-	}
-
 	superAdmin := new(model.SuperAdmin)
-	mapstructure.Decode(rawSuperAdmin, superAdmin)
+	var queryString = fmt.Sprintf(`
+		{ "selector": 
+			{
+				"_id": "\u0000SuperAdmin\u0000%s\u0000"		
+			}
+		}`, approverID)
+	common.Logger.Debugf("Get Query String %s", queryString)
+	queryResult, err := stub.GetQueryResult(queryString)
+	if err != nil {
+		common.Logger.Errorf("Get Query String Error: %s", err)
+	}
+	common.Logger.Debug("Finish Get query")
+
+	for queryResult.HasNext() {
+		queryResponse, err := queryResult.Next()
+		if err != nil {
+			common.Logger.Errorf("Query Result Error: %s", err)
+		}
+		err = json.Unmarshal(queryResponse.Value, superAdmin)
+		if err != nil {
+			continue
+		}
+	}
+	//rawSuperAdmin, err := util.GetDataById(stub, approverID, model.SuperAdminTable)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//superAdmin := new(model.SuperAdmin)
+	//mapstructure.Decode(rawSuperAdmin, superAdmin)
 
 	// Start verify
 	pkBytes := []byte(superAdmin.PublicKey)
