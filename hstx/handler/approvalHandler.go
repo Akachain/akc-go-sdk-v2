@@ -82,16 +82,41 @@ func (sah *ApprovalHanler) CreateApproval(stub shim.ChaincodeStubInterface, args
 		})
 	}
 
-	// Check this approver hasn't signed the proposal
-	compositeKey, _ := stub.CreateCompositeKey(model.ApprovalTable, []string{approval.ProposalID, approval.ApproverID})
-	rs, err := stub.GetState(compositeKey)
-	if err != nil { // Return error: Fail to get data
-		return common.RespondError(common.ResponseError{
-			ResCode: common.ERR4,
-			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine()),
-		})
+	//// Check this approver hasn't signed the proposal
+	//compositeKey, _ := stub.CreateCompositeKey(model.ApprovalTable, []string{approval.ProposalID, approval.ApproverID})
+	//rs, err := stub.GetState(compositeKey)
+	//if err != nil { // Return error: Fail to get data
+	//	return common.RespondError(common.ResponseError{
+	//		ResCode: common.ERR4,
+	//		Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR4], err.Error(), common.GetLine()),
+	//	})
+	//}
+	rs := new(model.Approval)
+	var queryString = fmt.Sprintf(`
+		{ "selector": 
+			{
+				"ApproverID": "%s",
+				"ProposalID": "%s"
+			}
+		}`, approval.ApproverID, approval.ProposalID)
+	common.Logger.Debugf("Get Query String %s", queryString)
+	queryResult, err := stub.GetQueryResult(queryString)
+	if err != nil {
+		common.Logger.Errorf("Get Query String Error: %s", err)
 	}
-	if len(rs) > 0 { // Return error: Only signing once
+	common.Logger.Debug("Finish Get query")
+
+	for queryResult.HasNext() {
+		queryResponse, err := queryResult.Next()
+		if err != nil {
+			common.Logger.Errorf("Query Result Error: %s", err)
+		}
+		err = json.Unmarshal(queryResponse.Value, rs)
+		if err != nil {
+			continue
+		}
+	}
+	if len(rs.ApprovalID) > 0 { // Return error: Only signing once
 		return common.RespondError(common.ResponseError{
 			ResCode: common.ERR9,
 			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR9], common.ResCodeDict[common.ERR9], common.GetLine()),
