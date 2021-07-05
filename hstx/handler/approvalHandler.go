@@ -328,6 +328,7 @@ func (sah *ApprovalHanler) verifySignature(stub shim.ChaincodeStubInterface, app
 		common.Logger.Errorf("Error in DecodeString signature function - verifySignature: %s", err)
 		return err
 	}
+	common.Logger.Debugf("Signature byte after DecodeString signature function - verifySignature: %s", signaturebyte)
 
 	R, S, err := utils.UnmarshalECDSASignature(signaturebyte)
 	if err != nil {
