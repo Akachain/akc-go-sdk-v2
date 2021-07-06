@@ -321,6 +321,7 @@ func (sah *ApprovalHanler) verifySignature(stub shim.ChaincodeStubInterface, app
 	}
 
 	pk := rawPk.(*ecdsa.PublicKey)
+	common.Logger.Debugf("Public key of current SuperAdmin - verifySignature: %s", pk)
 
 	// SIGNATURE
 	signaturebyte, err := base64.StdEncoding.DecodeString(signature)
@@ -335,6 +336,7 @@ func (sah *ApprovalHanler) verifySignature(stub shim.ChaincodeStubInterface, app
 		common.Logger.Errorf("Error in UnmarshalECDSASignature function - verifySignature: %s", err)
 		return err
 	}
+	common.Logger.Debugf("R and S data after UnmarshalECDSASignature function - verifySignature: %s %s", R, S)
 
 	// DATA
 	dataByte, err := base64.StdEncoding.DecodeString(message)
@@ -342,9 +344,11 @@ func (sah *ApprovalHanler) verifySignature(stub shim.ChaincodeStubInterface, app
 		common.Logger.Errorf("Error in DecodeString message function - verifySignature: %s", err)
 		return err
 	}
+	common.Logger.Debugf("dataByte after DecodeString message function - verifySignature: %s", dataByte)
 
 	hash := sha256.Sum256(dataByte)
 	var hashData = hash[:]
+	common.Logger.Debugf("hashData after Sum256 dataByte function - verifySignature: %s", hashData)
 
 	// VERIFY
 	checksign := ecdsa.Verify(pk, hashData, R, S)
