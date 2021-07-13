@@ -206,13 +206,24 @@ func InsertTableRow(
 		return
 	}
 
+	var queryString = ""
 	superAdmin := new(model.SuperAdmin)
-	var queryString = fmt.Sprintf(`
+	proposal := new(model.Proposal)
+	if table_name == model.SuperAdminTable {
+		queryString = fmt.Sprintf(`
 		{ "selector": 
 			{
 				"_id": "\u0000SuperAdmin\u0000%s\u0000"		
 			}
 		}`, row_keys[0])
+	} else if table_name == model.ProposalTable {
+		queryString = fmt.Sprintf(`
+		{ "selector": 
+			{
+				"_id": "\u0000Proposal\u0000%s\u0000"		
+			}
+		}`, row_keys[0])
+	}
 	common.Logger.Debugf("Get Query String %s", queryString)
 	queryResult, err := stub.GetQueryResult(queryString)
 	if err != nil {
@@ -225,7 +236,11 @@ func InsertTableRow(
 		if err != nil {
 			common.Logger.Errorf("Query Result Error: %s", err)
 		}
-		err = json.Unmarshal(queryResponse.Value, superAdmin)
+		if table_name == model.SuperAdminTable {
+			err = json.Unmarshal(queryResponse.Value, superAdmin)
+		} else if table_name == model.ProposalTable {
+			err = json.Unmarshal(queryResponse.Value, proposal)
+		}
 		if err != nil {
 			continue
 		}
