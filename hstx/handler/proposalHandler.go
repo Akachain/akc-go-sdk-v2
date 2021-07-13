@@ -259,6 +259,7 @@ func (sah *ProposalHanler) UpdateProposal(stub shim.ChaincodeStubInterface, args
 			continue
 		}
 	}
+	common.Logger.Debugf("Proposal data get from CouchDB: %s", proposal)
 
 	// Filter fields needed to update
 	newProposalValue := reflect.ValueOf(newProposal).Elem()
@@ -278,6 +279,7 @@ func (sah *ProposalHanler) UpdateProposal(stub shim.ChaincodeStubInterface, args
 			}
 		}
 	}
+	common.Logger.Debugf("Proposal data after update: %s", proposal)
 
 	err = util.ChangeInfo(stub, model.ProposalTable, []string{proposal.ProposalID}, proposal)
 	if err != nil { // Return error: Fail to Update data
@@ -286,6 +288,7 @@ func (sah *ProposalHanler) UpdateProposal(stub shim.ChaincodeStubInterface, args
 			Msg:     fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR5], err.Error(), common.GetLine()),
 		})
 	}
+	common.Logger.Debugf("Update Proposal successfully")
 
 	bytes, err := json.Marshal(proposal)
 	if err != nil { // Return error: Can't marshal json
