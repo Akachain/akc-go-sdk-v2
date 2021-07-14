@@ -77,7 +77,6 @@ func (sah *SuperAdminHanler) GetSuperAdminByID(stub shim.ChaincodeStubInterface,
 
 	var superAdmin = new(model.SuperAdmin)
 	superAdminID := args[0]
-	common.Logger.Debugf("Super Admin ID in GetSuperAdminByID function: %+v\n", superAdminID)
 
 	//res := util.GetDataByIdWithResponse(stub, superAdminID, new(model.SuperAdmin), model.SuperAdminTable)
 	//return res

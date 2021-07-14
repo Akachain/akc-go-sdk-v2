@@ -206,7 +206,6 @@ func InsertTableRow(
 		return
 	}
 
-	common.Logger.Debugf("Data sent to InsertTableRow function: %s", row_keys[0])
 	if table_name == model.SuperAdminTable {
 		superAdmin := new(model.SuperAdmin)
 		queryString := fmt.Sprintf(`
