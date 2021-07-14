@@ -59,7 +59,7 @@ func (sah *SuperAdminHanler) CreateSuperAdmin(stub shim.ChaincodeStubInterface, 
 
 //GetAllSuperAdmin ...
 func (sah *SuperAdminHanler) GetAllSuperAdmin(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	res, err := getSuperAdminData(stub, 6)
+	res, err := getSuperAdminData(stub, 10)
 	if err != nil {
 		resErr := common.ResponseError{common.ERR3, fmt.Sprintf("%s %s %s", common.ResCodeDict[common.ERR3], err.Error(), common.GetLine())}
 		return common.RespondError(resErr)
